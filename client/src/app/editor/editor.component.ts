@@ -1237,7 +1237,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Parse the MimicSegments XML and add every line/path element to the current SVG view.
+     * Parse the MimicSegments XML and add each MimicSegment as a separate shape to the current SVG view.
+     * Every MimicSegment becomes an own group element identified by 'segment-<ID>', so it can be
+     * selected, moved and bound to tags independently from the other segments.
      * @param xmlText raw content of the XML file
      */
     private importMimicSegments(xmlText: string) {
@@ -1246,45 +1248,85 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         if (doc.getElementsByTagName('parsererror').length) {
             throw new Error('Invalid XML file');
         }
-        // Collect every <line> and <path> element regardless of namespace
-        const sources = Array.from(doc.getElementsByTagName('*')).filter(
-            (el) => el.localName === 'line' || el.localName === 'path');
-        if (!sources.length) {
+        const segments = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === 'MimicSegment');
+        // Collect the line/path sources of every segment, keeping their original (absolute) coordinates
+        const segmentShapes: { id: string; sources: Element[] }[] = [];
+        const allSources: Element[] = [];
+        segments.forEach((segment, index) => {
+            const sources = Array.from(segment.getElementsByTagName('*')).filter(
+                (el) => el.localName === 'line' || el.localName === 'path');
+            if (!sources.length) {
+                return;
+            }
+            const rawId = segment.getAttribute('ID') || String(index + 1);
+            segmentShapes.push({ id: rawId, sources });
+            sources.forEach((src) => allSources.push(src));
+        });
+        if (!allSources.length) {
             alert(this.translateService.instant('msg.view-import-mimic-empty'));
             return;
         }
-        // Build a temporary group with cloned elements to measure the real bounding box
+        // Measure the global bounding box so all segments can be shifted close to the origin
+        // while keeping their relative positions to each other
         const measureSvg = document.createElementNS(svgns, 'svg');
         measureSvg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;left:-9999px;top:-9999px;');
-        const group = document.createElementNS(svgns, 'g');
-        sources.forEach((src) => {
-            const el = document.createElementNS(svgns, src.localName);
-            for (let i = 0; i < src.attributes.length; i++) {
-                const attr = src.attributes[i];
-                el.setAttribute(attr.name, attr.value);
-            }
-            group.appendChild(el);
-        });
-        measureSvg.appendChild(group);
+        const measureGroup = document.createElementNS(svgns, 'g');
+        allSources.forEach((src) => measureGroup.appendChild(this.cloneMimicElement(src, svgns)));
+        measureSvg.appendChild(measureGroup);
         document.body.appendChild(measureSvg);
         let bbox: SVGRect;
         try {
-            bbox = (group as any).getBBox();
+            bbox = (measureGroup as any).getBBox();
         } finally {
             document.body.removeChild(measureSvg);
         }
-        const minX = Math.floor(bbox.x);
-        const minY = Math.floor(bbox.y);
-        const width = Math.max(1, Math.ceil(bbox.width));
-        const height = Math.max(1, Math.ceil(bbox.height));
-        // Compose a self-contained SVG and let the editor import it as a scaled symbol
-        const svgString = `<svg xmlns="${svgns}" width="${width}" height="${height}" viewBox="${minX} ${minY} ${width} ${height}">`
-            + group.innerHTML + '</svg>';
+        const offsetX = Math.floor(bbox.x);
+        const offsetY = Math.floor(bbox.y);
+        const transform = `translate(${-offsetX},${-offsetY})`;
         const canvas = this.winRef.nativeWindow.svgEditor.canvas;
-        canvas.importSvgString(svgString);
+        const layer = canvas.getCurrentDrawing().getCurrentLayer();
+        const usedIds = new Set<string>();
+        // Create one independent shape (group) per MimicSegment
+        segmentShapes.forEach((segment) => {
+            const group = document.createElementNS(svgns, 'g');
+            group.setAttribute('id', this.getUniqueSegmentId(segment.id, usedIds));
+            group.setAttribute('type', 'svg-ext-shapes-image');
+            group.setAttribute('transform', transform);
+            segment.sources.forEach((src) => group.appendChild(this.cloneMimicElement(src, svgns)));
+            layer.appendChild(group);
+        });
+        this.clearSelection();
         this.checkSvgElementsMap(true);
         this.currentView.svgcontent = this.getContent();
         this.saveView(this.currentView, true);
+    }
+
+    /**
+     * Clone a line/path element from the parsed XML into a new SVG namespaced element,
+     * copying every attribute (coordinates, fill, stroke, ...).
+     */
+    private cloneMimicElement(src: Element, svgns: string): SVGElement {
+        const el = document.createElementNS(svgns, src.localName);
+        for (let i = 0; i < src.attributes.length; i++) {
+            const attr = src.attributes[i];
+            el.setAttribute(attr.name, attr.value);
+        }
+        return el as SVGElement; // TODO: remove type assertion
+    }
+
+    /**
+     * Build a unique element id for a MimicSegment in the form 'segment-<ID>'.
+     * Ensures the id is valid and does not collide with elements already in the view.
+     */
+    private getUniqueSegmentId(rawId: string, usedIds: Set<string>): string {
+        const sanitized = String(rawId).trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'x';
+        let candidate = `segment-${sanitized}`;
+        let suffix = 1;
+        while (usedIds.has(candidate) || document.getElementById(candidate)) {
+            candidate = `segment-${sanitized}-${suffix++}`;
+        }
+        usedIds.add(candidate);
+        return candidate;
     }
     //#endregion
 
