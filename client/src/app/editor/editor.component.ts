@@ -13,6 +13,7 @@ import { GaugePropertyComponent, GaugeDialogType, GaugePropertyData } from '../g
 
 import { GaugesManager } from '../gauges/gauges.component';
 import { GaugeBaseComponent } from '../gauges/gauge-base/gauge-base.component';
+import { Device, DeviceNetProperty, DeviceType, DEVICE_PREFIX, Tag, TAG_PREFIX } from '../_models/device';
 import { Utils } from '../_helpers/utils';
 import { Define } from '../_helpers/define';
 import { LibImagesComponent } from '../resources/lib-images/lib-images.component';
@@ -62,6 +63,8 @@ declare var mysvgeditor: any;
 })
 
 export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
+    private static readonly MimicMqttDeviceName = 'Segments';
+
     @ViewChild('gaugepanel', {static: false}) gaugePanelComponent: GaugeBaseComponent;
     @ViewChild('viewFileImportInput', {static: false}) viewFileImportInput: any;
     @ViewChild('mimicFileImportInput', {static: false}) mimicFileImportInput: any;
@@ -1250,7 +1253,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         const segments = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === 'MimicSegment');
         // Collect the line/path sources of every segment, keeping their original (absolute) coordinates
-        const segmentShapes: { id: string; sources: Element[] }[] = [];
+        const segmentShapes: { id: string; name: string; sources: Element[] }[] = [];
         const allSources: Element[] = [];
         segments.forEach((segment, index) => {
             const sources = Array.from(segment.getElementsByTagName('*')).filter(
@@ -1259,7 +1262,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
                 return;
             }
             const rawId = segment.getAttribute('ID') || String(index + 1);
-            segmentShapes.push({ id: rawId, sources });
+            const name = segment.getAttribute('Name') || '';
+            segmentShapes.push({ id: rawId, name, sources });
             sources.forEach((src) => allSources.push(src));
         });
         if (!allSources.length) {
@@ -1286,15 +1290,30 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const canvas = this.winRef.nativeWindow.svgEditor.canvas;
         const layer = canvas.getCurrentDrawing().getCurrentLayer();
         const usedIds = new Set<string>();
+        // Ensure an MQTT device is available to host the segments/<ID> topic subscriptions
+        const mqttDevice = this.getOrCreateMimicMqttDevice();
         // Create one independent shape (group) per MimicSegment
         segmentShapes.forEach((segment) => {
+            const elementId = this.getUniqueSegmentId(segment.id, usedIds);
             const group = document.createElementNS(svgns, 'g');
-            group.setAttribute('id', this.getUniqueSegmentId(segment.id, usedIds));
+            group.setAttribute('id', elementId);
             group.setAttribute('type', 'svg-ext-shapes-image');
             group.setAttribute('transform', transform);
             segment.sources.forEach((src) => group.appendChild(this.cloneMimicElement(src, svgns)));
             layer.appendChild(group);
+            // Bind the segment item to the MQTT topic segments/<ID>, so it consumes its state from there
+            const topic = `segments/${segment.id}`;
+            const tag = this.getOrCreateMqttTopicTag(mqttDevice, topic);
+            const settings = this.gaugesManager.createSettings(elementId, 'svg-ext-shapes-image');
+            if (settings) {
+                settings.name = segment.name || topic;
+                settings.property = new GaugeProperty();
+                settings.property.variableId = tag.id;
+                this.setGaugeSettings(settings);
+            }
         });
+        // Persist the device with the newly created topic subscriptions
+        this.projectService.setDeviceTags(mqttDevice);
         this.clearSelection();
         this.checkSvgElementsMap(true);
         this.currentView.svgcontent = this.getContent();
@@ -1327,6 +1346,51 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         usedIds.add(candidate);
         return candidate;
+    }
+
+    /**
+     * Get the MQTT device used to host the imported segment topics, or create it if missing.
+     * Reuses a device named 'Segments' if present, otherwise any existing MQTT device,
+     * otherwise creates a new disabled MQTT device (the broker address is configured by the user).
+     */
+    private getOrCreateMimicMqttDevice(): Device {
+        const devices = <Device[]>this.projectService.getDeviceList();
+        let device = devices.find((d) => d.type === DeviceType.MQTTclient && d.name === EditorComponent.MimicMqttDeviceName);
+        if (!device) {
+            device = devices.find((d) => d.type === DeviceType.MQTTclient);
+        }
+        if (!device) {
+            device = new Device(Utils.getGUID(DEVICE_PREFIX));
+            device.name = EditorComponent.MimicMqttDeviceName;
+            device.type = DeviceType.MQTTclient;
+            device.enabled = false;
+            device.polling = 1000;
+            device.property = new DeviceNetProperty();
+            device.tags = {};
+        }
+        if (!device.tags) {
+            device.tags = {};
+        }
+        return device;
+    }
+
+    /**
+     * Get the MQTT subscription tag for the given topic from the device, or create it if missing.
+     * The tag subscribes to the raw payload of the topic (e.g. 'segments/11').
+     */
+    private getOrCreateMqttTopicTag(device: Device, topic: string): Tag {
+        const existing = <Tag>Object.values(device.tags).find((t: Tag) => t.address === topic && t.options?.subs);
+        if (existing) {
+            return existing;
+        }
+        const tag = new Tag(Utils.getGUID(TAG_PREFIX));
+        tag.name = topic;
+        tag.type = 'raw';
+        tag.address = topic;
+        tag.memaddress = topic;
+        tag.options = { subs: topic };
+        device.tags[tag.id] = tag;
+        return tag;
     }
     //#endregion
 
