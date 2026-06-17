@@ -60,8 +60,12 @@
                         </mat-icon>
                         <mat-icon aria-label="Import" matTooltip="{{'editor.view-import' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
                             (click)="onImportView();$event.stopPropagation()">system_update_alt</mat-icon>
+                        <mat-icon aria-label="ImportMimic" matTooltip="{{'editor.view-import-mimic' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
+                            (click)="onImportMimicSegments();$event.stopPropagation()">account_tree</mat-icon>
                         <input type="file" #viewFileImportInput style="display: none" id="viewFileUpload" (click)="$event.stopPropagation()"
                             (change)="onViewFileChangeListener($event)" accept=".json" />
+                        <input type="file" #mimicFileImportInput style="display: none" id="mimicFileUpload" (click)="$event.stopPropagation()"
+                            (change)="onMimicFileChangeListener($event)" accept=".xml" />
                     </mat-expansion-panel-header>
                     <div appResize class="leftbar-panel view-panel" [(height)]="panelsState.panelViewHeight" [style.height.px]="panelsState.panelViewHeight"
                         (changeEnd)="savePanelState()">

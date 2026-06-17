@@ -64,6 +64,7 @@ declare var mysvgeditor: any;
 export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('gaugepanel', {static: false}) gaugePanelComponent: GaugeBaseComponent;
     @ViewChild('viewFileImportInput', {static: false}) viewFileImportInput: any;
+    @ViewChild('mimicFileImportInput', {static: false}) mimicFileImportInput: any;
     @ViewChild('cardsview', {static: false}) cardsview: CardsViewComponent;
     @ViewChild('sidePanel', {static: false}) sidePanel: MatDrawer;
     @ViewChild('svgSelectorPanel', {static: false}) svgSelectorPanel: MatDrawer;
@@ -1192,6 +1193,98 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         };
         reader.readAsText(input.files[0]);
         this.viewFileImportInput.nativeElement.value = null;
+    }
+
+    /**
+     * Open the file picker to import a MimicSegments XML file into the current view
+     */
+    onImportMimicSegments() {
+        let ele = document.getElementById('mimicFileUpload') as HTMLElement;
+        ele.click();
+    }
+
+    /**
+     * Import a MimicSegments XML file into the current SVG view.
+     * Structure: MimicSegments > MimicSegment > svg > g > line | path
+     * Each line/path is rendered as a native SVG element in the editor canvas.
+     * @param event file resource
+     */
+    onMimicFileChangeListener(event) {
+        let input = event.target;
+        if (!input.files || !input.files.length) {
+            return;
+        }
+        if (!this.currentView || this.currentView.type === ViewType.cards || this.currentView.type === ViewType.maps) {
+            alert(this.translateService.instant('msg.view-import-mimic-no-svg'));
+            this.mimicFileImportInput.nativeElement.value = null;
+            return;
+        }
+        let reader = new FileReader();
+        reader.onload = () => {
+            try {
+                this.importMimicSegments(reader.result.toString());
+            } catch (err) {
+                console.error(err);
+                alert(this.translateService.instant('msg.view-import-mimic-error'));
+            }
+            this.mimicFileImportInput.nativeElement.value = null;
+        };
+        reader.onerror = () => {
+            alert(this.translateService.instant('msg.view-import-mimic-error'));
+            this.mimicFileImportInput.nativeElement.value = null;
+        };
+        reader.readAsText(input.files[0]);
+    }
+
+    /**
+     * Parse the MimicSegments XML and add every line/path element to the current SVG view.
+     * @param xmlText raw content of the XML file
+     */
+    private importMimicSegments(xmlText: string) {
+        const svgns = 'http://www.w3.org/2000/svg';
+        const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+        if (doc.getElementsByTagName('parsererror').length) {
+            throw new Error('Invalid XML file');
+        }
+        // Collect every <line> and <path> element regardless of namespace
+        const sources = Array.from(doc.getElementsByTagName('*')).filter(
+            (el) => el.localName === 'line' || el.localName === 'path');
+        if (!sources.length) {
+            alert(this.translateService.instant('msg.view-import-mimic-empty'));
+            return;
+        }
+        // Build a temporary group with cloned elements to measure the real bounding box
+        const measureSvg = document.createElementNS(svgns, 'svg');
+        measureSvg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;left:-9999px;top:-9999px;');
+        const group = document.createElementNS(svgns, 'g');
+        sources.forEach((src) => {
+            const el = document.createElementNS(svgns, src.localName);
+            for (let i = 0; i < src.attributes.length; i++) {
+                const attr = src.attributes[i];
+                el.setAttribute(attr.name, attr.value);
+            }
+            group.appendChild(el);
+        });
+        measureSvg.appendChild(group);
+        document.body.appendChild(measureSvg);
+        let bbox: SVGRect;
+        try {
+            bbox = (group as any).getBBox();
+        } finally {
+            document.body.removeChild(measureSvg);
+        }
+        const minX = Math.floor(bbox.x);
+        const minY = Math.floor(bbox.y);
+        const width = Math.max(1, Math.ceil(bbox.width));
+        const height = Math.max(1, Math.ceil(bbox.height));
+        // Compose a self-contained SVG and let the editor import it as a scaled symbol
+        const svgString = `<svg xmlns="${svgns}" width="${width}" height="${height}" viewBox="${minX} ${minY} ${width} ${height}">`
+            + group.innerHTML + '</svg>';
+        const canvas = this.winRef.nativeWindow.svgEditor.canvas;
+        canvas.importSvgString(svgString);
+        this.checkSvgElementsMap(true);
+        this.currentView.svgcontent = this.getContent();
+        this.saveView(this.currentView, true);
     }
     //#endregion
 
