@@ -7,7 +7,7 @@ import { Subject, Subscription, switchMap, takeUntil } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 
 import { ProjectService, SaveMode } from '../_services/project.service';
-import { Hmi, View, GaugeSettings, SelElement, LayoutSettings, ViewType, ISvgElement, GaugeProperty, DocProfile } from '../_models/hmi';
+import { Hmi, View, GaugeSettings, SelElement, LayoutSettings, ViewType, ISvgElement, GaugeProperty, GaugeRangeProperty, DocProfile } from '../_models/hmi';
 import { WindowRef } from '../_helpers/windowref';
 import { GaugePropertyComponent, GaugeDialogType, GaugePropertyData } from '../gauges/gauge-property/gauge-property.component';
 
@@ -1309,6 +1309,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
                 settings.name = segment.name || topic;
                 settings.property = new GaugeProperty();
                 settings.property.variableId = tag.id;
+                // When the bound MQTT topic value is 0 the whole segment turns black,
+                // for any other value it keeps the colors defined in its SVG (see global CSS rule).
+                settings.property.ranges = this.buildMimicSegmentRanges();
                 this.setGaugeSettings(settings);
             }
         });
@@ -1346,6 +1349,31 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         usedIds.add(candidate);
         return candidate;
+    }
+
+    /**
+     * Build the value-driven color ranges used by every imported MimicSegment.
+     * A segment turns black when its bound MQTT topic value is 0, and keeps the
+     * colors defined in its SVG for any other value.
+     * The ranges only toggle the group's `stroke` attribute (0 -> '#000000', else 'none');
+     * a global CSS rule then forces the child line/path strokes to black when the group
+     * is flagged, so the original per-element colors are preserved when the value is not 0.
+     */
+    private buildMimicSegmentRanges(): GaugeRangeProperty[] {
+        const offRange = new GaugeRangeProperty();
+        offRange.min = 0;
+        offRange.max = 0;
+        offRange.color = 'none';
+        offRange.stroke = '#000000';
+
+        const onRange = new GaugeRangeProperty();
+        onRange.min = -1e15;
+        onRange.max = 1e15;
+        onRange.color = 'none';
+        onRange.stroke = 'none';
+
+        // The 'on' (default) range is evaluated first; the 'off' range overrides it when value is exactly 0.
+        return [onRange, offRange];
     }
 
     /**

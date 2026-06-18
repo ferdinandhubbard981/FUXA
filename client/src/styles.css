@@ -109,6 +109,18 @@
 		    format("svg");
 }
 
+/* Imported MimicSegment off-state: when the runtime sets the group stroke to black
+   (bound MQTT topic value is 0) force all child shapes black, otherwise keep their SVG colors. */
+g[type="svg-ext-shapes-image"][stroke="#000000"] line,
+g[type="svg-ext-shapes-image"][stroke="#000000"] path,
+g[type="svg-ext-shapes-image"][stroke="#000000"] polyline,
+g[type="svg-ext-shapes-image"][stroke="#000000"] polygon,
+g[type="svg-ext-shapes-image"][stroke="#000000"] circle,
+g[type="svg-ext-shapes-image"][stroke="#000000"] ellipse,
+g[type="svg-ext-shapes-image"][stroke="#000000"] rect {
+    stroke: #000000 !important;
+}
+
 /* System and General */
 html {
     height: 100%;
