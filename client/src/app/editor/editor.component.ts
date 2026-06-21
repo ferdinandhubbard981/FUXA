@@ -1240,9 +1240,10 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Parse the MimicSegments XML and add each MimicSegment as a separate shape to the current SVG view.
-     * Every MimicSegment becomes an own group element identified by 'segment-<ID>', so it can be
-     * selected, moved and bound to tags independently from the other segments.
+     * Parse the Mimic XML and add each MimicSegment and MimicBackground as a separate shape to the
+     * current SVG view. Every MimicSegment becomes an own group element identified by 'segment-<ID>',
+     * bound to its MQTT topic; every MimicBackground becomes a static group 'background-<Name>' with
+     * no tag binding. Each shape can be selected, moved and bound independently from the others.
      * @param xmlText raw content of the XML file
      */
     private importMimicSegments(xmlText: string) {
@@ -1251,36 +1252,12 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         if (doc.getElementsByTagName('parsererror').length) {
             throw new Error('Invalid XML file');
         }
-        const segments = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === 'MimicSegment');
-        // Collect the line/path sources of every segment, keeping their original (absolute) coordinates
-        const segmentShapes: { id: string; name: string; sources: Element[]; stroke: string; fill: string }[] = [];
+        const segmentShapes = this.collectMimicShapes(doc, 'MimicSegment');
+        const backgroundShapes = this.collectMimicShapes(doc, 'MimicBackground');
+        // Collect the line/path sources of every shape, keeping their original (absolute) coordinates
         const allSources: Element[] = [];
-        for (let index = 0; index < segments.length; index++) {
-            const segment = segments[index];
-            const sources = Array.from(segment.getElementsByTagName('*')).filter(
-                (el) => el.localName === 'line' || el.localName === 'path');
-            if (!sources.length) {
-                continue;
-            }
-            const rawId = segment.getAttribute('ID') || String(index + 1);
-            const name = segment.getAttribute('Name') || '';
-            // Group the segment shapes by their (stroke, fill) color pair: each unique pair becomes
-            // its own component (uniform colors), all bound to the same MQTT topic.
-            const byColor = new Map<string, { stroke: string; fill: string; sources: Element[] }>();
-            sources.forEach((src) => {
-                const stroke = this.resolveMimicColor(src.getAttribute('stroke'));
-                const fill = this.resolveMimicColor(src.getAttribute('fill'));
-                const key = `${stroke.toLowerCase()}|${fill.toLowerCase()}`;
-                if (!byColor.has(key)) {
-                    byColor.set(key, { stroke, fill, sources: [] });
-                }
-                byColor.get(key).sources.push(src);
-                allSources.push(src);
-            });
-            byColor.forEach((group) => {
-                segmentShapes.push({ id: rawId, name, sources: group.sources, stroke: group.stroke, fill: group.fill });
-            });
-        }
+        segmentShapes.forEach((shape) => shape.sources.forEach((src) => allSources.push(src)));
+        backgroundShapes.forEach((shape) => shape.sources.forEach((src) => allSources.push(src)));
         if (!allSources.length) {
             alert(this.translateService.instant('msg.view-import-mimic-empty'));
             return;
@@ -1307,6 +1284,33 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         const usedIds = new Set<string>();
         // Ensure an MQTT device is available to host the segments/<ID> topic subscriptions
         const mqttDevice = this.getOrCreateMimicMqttDevice();
+        // Create the static MimicBackground shapes (no tag binding): they keep their original colors
+        // and are appended first so they render beneath the interactive segments.
+        backgroundShapes.forEach((background) => {
+            const elementId = this.getUniqueBackgroundId(background.name, usedIds);
+            const group = document.createElementNS(svgns, 'g');
+            group.setAttribute('id', elementId);
+            group.setAttribute('type', 'svg-ext-shapes-image');
+            group.setAttribute('transform', transform);
+            // Static element: bake the original colors on the group; the children inherit them.
+            group.setAttribute('stroke', background.stroke);
+            group.setAttribute('fill', background.fill);
+            background.sources.forEach((src) => {
+                const child = this.cloneMimicElement(src, svgns);
+                child.removeAttribute('stroke');
+                child.removeAttribute('fill');
+                group.appendChild(child);
+            });
+            layer.appendChild(group);
+            // Register the shape by its name so the editor handles it consistently; no tag is bound,
+            // so the runtime never changes its colors (static element).
+            const settings = this.gaugesManager.createSettings(elementId, 'svg-ext-shapes-image');
+            if (settings) {
+                settings.name = background.name || elementId;
+                settings.property = new GaugeProperty();
+                this.setGaugeSettings(settings);
+            }
+        });
         // Create one independent shape (group) per MimicSegment
         segmentShapes.forEach((segment) => {
             const elementId = this.getUniqueSegmentId(segment.id, usedIds);
@@ -1374,6 +1378,58 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         usedIds.add(candidate);
         return candidate;
+    }
+
+    /**
+     * Build a unique element id for a MimicBackground in the form 'background-<Name>'.
+     * Backgrounds are identified by their name (not by an ID) and stay static (no tag binding).
+     */
+    private getUniqueBackgroundId(rawName: string, usedIds: Set<string>): string {
+        const sanitized = String(rawName).trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'x';
+        let candidate = `background-${sanitized}`;
+        let suffix = 1;
+        while (usedIds.has(candidate) || document.getElementById(candidate)) {
+            candidate = `background-${sanitized}-${suffix++}`;
+        }
+        usedIds.add(candidate);
+        return candidate;
+    }
+
+    /**
+     * Collect the drawable shapes of every Mimic item with the given tag name (MimicSegment or
+     * MimicBackground). Each item's line/path sources are grouped by their (stroke, fill) color
+     * pair, so every uniform-color group becomes its own shape.
+     */
+    private collectMimicShapes(doc: Document, localTagName: string):
+        { id: string; name: string; sources: Element[]; stroke: string; fill: string }[] {
+        const items = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === localTagName);
+        const shapes: { id: string; name: string; sources: Element[]; stroke: string; fill: string }[] = [];
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            const sources = Array.from(item.getElementsByTagName('*')).filter(
+                (el) => el.localName === 'line' || el.localName === 'path');
+            if (!sources.length) {
+                continue;
+            }
+            const rawId = item.getAttribute('ID') || String(index + 1);
+            const name = item.getAttribute('Name') || '';
+            // Group the shapes by their (stroke, fill) color pair: each unique pair becomes
+            // its own component (uniform colors).
+            const byColor = new Map<string, { stroke: string; fill: string; sources: Element[] }>();
+            sources.forEach((src) => {
+                const stroke = this.resolveMimicColor(src.getAttribute('stroke'));
+                const fill = this.resolveMimicColor(src.getAttribute('fill'));
+                const key = `${stroke.toLowerCase()}|${fill.toLowerCase()}`;
+                if (!byColor.has(key)) {
+                    byColor.set(key, { stroke, fill, sources: [] });
+                }
+                byColor.get(key).sources.push(src);
+            });
+            byColor.forEach((group) => {
+                shapes.push({ id: rawId, name, sources: group.sources, stroke: group.stroke, fill: group.fill });
+            });
+        }
+        return shapes;
     }
 
     /**
