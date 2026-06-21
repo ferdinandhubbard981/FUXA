@@ -1253,7 +1253,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         const segments = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === 'MimicSegment');
         // Collect the line/path sources of every segment, keeping their original (absolute) coordinates
-        const segmentShapes: { id: string; name: string; sources: Element[]; color: string }[] = [];
+        const segmentShapes: { id: string; name: string; sources: Element[]; stroke: string; fill: string }[] = [];
         const allSources: Element[] = [];
         for (let index = 0; index < segments.length; index++) {
             const segment = segments[index];
@@ -1264,25 +1264,22 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
             }
             const rawId = segment.getAttribute('ID') || String(index + 1);
             const name = segment.getAttribute('Name') || '';
-            // Determine the single stroke color of the segment; abort if it mixes different colors
-            const colors = new Set<string>();
-            let firstColor: string = null;
+            // Group the segment shapes by their (stroke, fill) color pair: each unique pair becomes
+            // its own component (uniform colors), all bound to the same MQTT topic.
+            const byColor = new Map<string, { stroke: string; fill: string; sources: Element[] }>();
             sources.forEach((src) => {
-                const stroke = (src.getAttribute('stroke') || '').trim();
-                if (stroke && stroke.toLowerCase() !== 'none') {
-                    if (firstColor === null) {
-                        firstColor = stroke;
-                    }
-                    colors.add(stroke.toLowerCase());
+                const stroke = this.resolveMimicColor(src.getAttribute('stroke'));
+                const fill = this.resolveMimicColor(src.getAttribute('fill'));
+                const key = `${stroke.toLowerCase()}|${fill.toLowerCase()}`;
+                if (!byColor.has(key)) {
+                    byColor.set(key, { stroke, fill, sources: [] });
                 }
+                byColor.get(key).sources.push(src);
+                allSources.push(src);
             });
-            if (colors.size > 1) {
-                alert(this.translateService.instant('msg.view-import-mimic-multicolor', { name: name || rawId }));
-                return;
-            }
-            const color = firstColor || '#FFFFFF';
-            segmentShapes.push({ id: rawId, name, sources, color });
-            sources.forEach((src) => allSources.push(src));
+            byColor.forEach((group) => {
+                segmentShapes.push({ id: rawId, name, sources: group.sources, stroke: group.stroke, fill: group.fill });
+            });
         }
         if (!allSources.length) {
             alert(this.translateService.instant('msg.view-import-mimic-empty'));
@@ -1317,12 +1314,15 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
             group.setAttribute('id', elementId);
             group.setAttribute('type', 'svg-ext-shapes-image');
             group.setAttribute('transform', transform);
-            // The color is stored on the gauge item (ranges), not baked into the SVG:
-            // children have no stroke and inherit it from the group, which defaults to the off-state (black).
-            group.setAttribute('stroke', '#000000');
+            // The colors are stored on the gauge item (ranges), not baked into the SVG: children have
+            // no stroke/fill and inherit them from the group, which defaults to the off-state
+            // (black, or none when the original color was none).
+            group.setAttribute('stroke', segment.stroke === 'none' ? 'none' : '#000000');
+            group.setAttribute('fill', segment.fill === 'none' ? 'none' : '#000000');
             segment.sources.forEach((src) => {
                 const child = this.cloneMimicElement(src, svgns);
                 child.removeAttribute('stroke');
+                child.removeAttribute('fill');
                 group.appendChild(child);
             });
             layer.appendChild(group);
@@ -1334,8 +1334,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
                 settings.name = segment.name || topic;
                 settings.property = new GaugeProperty();
                 settings.property.variableId = tag.id;
-                // Drive the stroke from the bound MQTT topic: value 0 -> black, value 1 -> the segment color.
-                settings.property.ranges = this.buildMimicSegmentRanges(segment.color);
+                // Drive stroke and fill from the bound MQTT topic: value 0 -> black, value 1 -> the
+                // original color; a color of 'none' stays 'none' in both states.
+                settings.property.ranges = this.buildMimicSegmentRanges(segment.stroke, segment.fill);
                 this.setGaugeSettings(settings);
             }
         });
@@ -1376,21 +1377,33 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Build the value-driven stroke ranges used by every imported MimicSegment.
-     * The bound MQTT topic drives the segment stroke: value 0 -> black, value 1 -> the segment color.
-     * The color is stored here (on the gauge item) instead of being baked into the SVG; the segment
-     * children inherit the stroke from their group, which the runtime updates from these ranges.
+     * Resolve a MimicSegment color attribute: returns 'none' when the value is missing,
+     * empty or explicitly 'none', otherwise the original color string.
      */
-    private buildMimicSegmentRanges(color: string): GaugeRangeProperty[] {
+    private resolveMimicColor(value: string | null): string {
+        const v = (value || '').trim();
+        return (!v || v.toLowerCase() === 'none') ? 'none' : v;
+    }
+
+    /**
+     * Build the value-driven stroke/fill ranges used by every imported MimicSegment.
+     * The bound MQTT topic drives the colors: value 0 -> black, value 1 -> the original color.
+     * A color that was originally 'none' stays 'none' in both states.
+     * The colors are stored here (on the gauge item) instead of being baked into the SVG; the
+     * segment children inherit stroke/fill from their group, which the runtime updates from these ranges.
+     */
+    private buildMimicSegmentRanges(stroke: string, fill: string): GaugeRangeProperty[] {
         const offRange = new GaugeRangeProperty();
         offRange.min = 0;
         offRange.max = 0;
-        offRange.stroke = '#000000';
+        offRange.stroke = stroke === 'none' ? 'none' : '#000000';
+        offRange.color = fill === 'none' ? 'none' : '#000000';
 
         const onRange = new GaugeRangeProperty();
         onRange.min = 1;
         onRange.max = 1;
-        onRange.stroke = color;
+        onRange.stroke = stroke;
+        onRange.color = fill;
 
         return [offRange, onRange];
     }
