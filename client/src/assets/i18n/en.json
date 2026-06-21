@@ -1959,6 +1959,7 @@
     "msg.view-import-mimic-no-svg": "Please select an SVG view before importing Mimic Segments.",
     "msg.view-import-mimic-error": "Unable to import the Mimic Segments file!",
     "msg.view-import-mimic-empty": "No line or path elements found in the file.",
+    "msg.view-import-mimic-multicolor": "Import aborted: the Mimic Segment '{{name}}' contains more than one stroke color. Each segment must use a single color.",
     "msg.project-save-unauthorized": "Project save failed! Unauthorized! Reload the page and try again.",
     "msg.settings-save-unauthorized": "Settings save failed! Unauthorized! Reload the page and try again.",
     "msg.project-save-ask": "Do you want to leave the project?",
