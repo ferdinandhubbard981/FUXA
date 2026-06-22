@@ -1,3 +1,10 @@
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+    container-type: size;
+}
+
 .onecontrol {
     display: flex;
     flex-direction: row;
@@ -8,6 +15,9 @@
     font-family: inherit;
     user-select: none;
     overflow: hidden;
+    // Font scales with the widget: tracks the height, capped by width so
+    // long labels never overflow horizontally while keeping fixed proportions.
+    font-size: min(55cqh, 12cqw);
 }
 
 .onecontrol-label {
@@ -17,14 +27,17 @@
     font-weight: 700;
     letter-spacing: 0.5px;
     white-space: nowrap;
+    flex: 3.3 1 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .onecontrol-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 auto;
-    min-width: 28px;
+    flex: 1 1 0;
+    min-width: 0;
     margin-left: 2px;
     cursor: pointer;
 }
@@ -43,8 +56,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 1 auto;
-    min-width: 34px;
+    flex: 1.4 1 0;
+    min-width: 0;
     margin-left: 2px;
     font-weight: 700;
 }
