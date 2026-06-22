@@ -33,6 +33,12 @@ export class OneControlButtonComponent {
     disabled = false;
     onUpdate: (value: string) => void;
 
+    static readonly MISMATCH_BACKGROUND = '#B7950B';
+
+    get valueBackgroundColor(): string {
+        return this.feedbackMatchesCommand() ? this.options.valueBackground : OneControlButtonComponent.MISMATCH_BACKGROUND;
+    }
+
     setOptions(options: OneControlOptions) {
         if (options) {
             this.options = { ...new OneControlOptions(), ...options };
@@ -93,6 +99,14 @@ export class OneControlButtonComponent {
     private commandIsActive(): boolean {
         // the command tag is considered "null" when it is not a digit or is 0
         return Number.isFinite(this.commandValue) && this.commandValue !== 0;
+    }
+
+    private feedbackMatchesCommand(): boolean {
+        if (!this.commandIsActive()) {
+            // no active command: the feedback applies, the digit is considered in sync
+            return true;
+        }
+        return Number.isFinite(this.feedbackValue) && this.feedbackValue === this.commandValue;
     }
 
     private refreshValue() {

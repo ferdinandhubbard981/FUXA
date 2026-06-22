@@ -5,7 +5,7 @@
         [class.readonly]="isReadonly || disabled" (click)="onDecrement()">
         <span class="onecontrol-sign">&#8722;</span>
     </div>
-    <div class="onecontrol-value" [style.background-color]="options.valueBackground" [style.color]="options.valueColor">
+    <div class="onecontrol-value" [style.background-color]="valueBackgroundColor" [style.color]="options.valueColor">
         <span #valueText>{{ displayValue }}</span>
     </div>
     <div class="onecontrol-btn" [style.background-color]="options.buttonBackground" [style.color]="options.buttonColor"
