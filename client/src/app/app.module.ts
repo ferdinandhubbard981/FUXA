@@ -176,6 +176,9 @@ import { NgxSchedulerComponent } from './gui-helpers/ngx-scheduler/ngx-scheduler
 import { FlexDeviceTagComponent } from './gauges/gauge-property/flex-device-tag/flex-device-tag.component';
 import { PanelComponent } from './gauges/controls/panel/panel.component';
 import { PanelPropertyComponent } from './gauges/controls/panel/panel-property/panel-property.component';
+import { OneControlComponent } from './gauges/controls/onecontrol/onecontrol.component';
+import { OneControlButtonComponent } from './gauges/controls/onecontrol/onecontrol-button/onecontrol-button.component';
+import { OneControlPropertyComponent } from './gauges/controls/onecontrol/onecontrol-property/onecontrol-property.component';
 import { UserEditComponent } from './users/user-edit/user-edit.component';
 import { FuxaViewDialogComponent } from './fuxa-view/fuxa-view-dialog/fuxa-view-dialog.component';
 import { DeviceTagSelectionComponent } from './device/device-tag-selection/device-tag-selection.component';
@@ -401,6 +404,8 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
         ReportItemChartComponent,
         PanelComponent,
         PanelPropertyComponent,
+        OneControlButtonComponent,
+        OneControlPropertyComponent,
         WebcamPlayerComponent,
         WebcamPlayerDialogComponent,
         ResizeDirective,
@@ -487,6 +492,7 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
         PipeComponent,
         SliderComponent,
         HtmlTableComponent,
+        OneControlComponent,
         Dictionary,
         ModalPositionCache,
         Define,

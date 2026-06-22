@@ -27,6 +27,7 @@ import { ValueComponent } from '../gauges/controls/value/value.component';
 import { GaugeProgressComponent } from '../gauges/controls/gauge-progress/gauge-progress.component';
 import { GaugeSemaphoreComponent } from '../gauges/controls/gauge-semaphore/gauge-semaphore.component';
 import { HtmlSwitchPropertyComponent } from '../gauges/controls/html-switch/html-switch-property/html-switch-property.component';
+import { OneControlPropertyComponent } from '../gauges/controls/onecontrol/onecontrol-property/onecontrol-property.component';
 
 import { GridsterItem } from 'angular-gridster2';
 import { CardConfigComponent, CardConfigType } from './card-config/card-config.component';
@@ -1673,6 +1674,15 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
                     view: this.currentView,
                     scripts: this.projectService.getScripts(),
                     inputs: Object.values(this.currentView.items).filter(gs => gs.name && (gs.id.startsWith('HXS_') || gs.id.startsWith('HXI_'))),
+                    names: names
+                }
+            });
+        } else if (dlgType === GaugeDialogType.OneControl) {
+            dialogRef = this.dialog.open(OneControlPropertyComponent, {
+                position: { top: '60px' },
+                data: {
+                    settings: tempsettings, devices: Object.values(this.projectService.getDevices()),
+                    withEvents: eventsSupported, withActions: actionsSupported,
                     names: names
                 }
             });

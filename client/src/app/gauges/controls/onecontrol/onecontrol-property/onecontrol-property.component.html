@@ -1,0 +1,24 @@
+<div class="container">
+    <h1 mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'editor.controls-onecontrol-settings' | translate}}</h1>
+    <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content>
+        <div style="padding-top: 15px;">
+            <div class="block">
+                <flex-auth [name]="name" [permission]="property.permission" [permissionRoles]="property.permissionRoles" #flexauth></flex-auth>
+            </div>
+            <div class="block">
+                <flex-head [data]="data" [property]="property" #flexhead [withStaticValue]="false"></flex-head>
+            </div>
+            <div class="field-row mt10">
+                <div class="my-form-field">
+                    <span>{{'editor.controls-onecontrol-label' | translate}}</span>
+                    <input [(ngModel)]="property.text" style="width: 220px;display:inline-block;" type="text">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button color="primary" (click)="onOkClick()" [mat-dialog-close]="data" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+    </div>
+</div>

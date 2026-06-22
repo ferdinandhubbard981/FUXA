@@ -38,6 +38,7 @@ import { FuxaViewComponent } from '../fuxa-view/fuxa-view.component';
 import { AuthService } from '../_services/auth.service';
 import { DevicesUtils, Tag } from '../_models/device';
 import { HtmlVideoComponent } from './controls/html-video/html-video.component';
+import { OneControlComponent } from './controls/onecontrol/onecontrol.component';
 
 @Injectable()
 export class GaugesManager {
@@ -74,7 +75,7 @@ export class GaugesManager {
     static Gauges = [ValueComponent, HtmlInputComponent, HtmlButtonComponent, HtmlBagComponent,
         HtmlSelectComponent, HtmlChartComponent, GaugeProgressComponent, GaugeSemaphoreComponent, ShapesComponent, ProcEngComponent, ApeShapesComponent,
         PipeComponent, SliderComponent, HtmlSwitchComponent, HtmlGraphComponent, HtmlIframeComponent, HtmlTableComponent,
-        HtmlImageComponent, PanelComponent, HtmlVideoComponent, HtmlSchedulerComponent];
+        HtmlImageComponent, PanelComponent, HtmlVideoComponent, HtmlSchedulerComponent, OneControlComponent];
 
     constructor(private hmiService: HmiService,
         private authService: AuthService,
@@ -200,6 +201,8 @@ export class GaugesManager {
             return this.mapGauges[ga.id] = SliderComponent.detectChange(ga, res, ref);
         } else if (ga.type.startsWith(HtmlSwitchComponent.TypeTag)) {
             return this.mapGauges[ga.id] = HtmlSwitchComponent.detectChange(ga, res, ref);
+        } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
+            return this.mapGauges[ga.id] = OneControlComponent.initElement(ga, res, ref, false);
         } else if (ga.type.startsWith(HtmlIframeComponent.TypeTag)) {
             HtmlIframeComponent.detectChange(ga);
         } else if (ga.type.startsWith(HtmlTableComponent.TypeTag)) {
@@ -519,6 +522,11 @@ export class GaugesManager {
             HtmlImageComponent.bindEvents(ga, (event) => {
                 self.putEvent(event);
             });
+        } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
+            let self = this;
+            OneControlComponent.bindEvents(ga, this.mapGauges[ga.id], (event) => {
+                self.putEvent(event);
+            });
         }
     }
 
@@ -592,6 +600,15 @@ export class GaugesManager {
                         Object.keys(this.memorySigGauges[sig.id]).forEach(k => {
                             if (k === ga.id && this.mapGauges[k]) {
                                 PanelComponent.processValue(ga, svgele, sig, gaugeStatus, this.mapGauges[k]);
+                            }
+                        });
+                    }
+                    break;
+                } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
+                    if (this.memorySigGauges[sig.id]) {
+                        Object.keys(this.memorySigGauges[sig.id]).forEach(k => {
+                            if (k === ga.id && this.mapGauges[k]) {
+                                OneControlComponent.processValue(ga, svgele, sig, gaugeStatus, this.mapGauges[k]);
                             }
                         });
                     }
@@ -779,6 +796,8 @@ export class GaugesManager {
             return 'table_';
         } else if (type.startsWith(HtmlSchedulerComponent.TypeTag)) {
             return 'scheduler_';
+        } else if (type.startsWith(OneControlComponent.TypeTag)) {
+            return 'onecontrol_';
         }
         return 'shape_';
     }
@@ -892,6 +911,10 @@ export class GaugesManager {
             return gauge || true;
         } else if (ga.type.startsWith(HtmlImageComponent.TypeTag)) {
             let gauge = HtmlImageComponent.initElement(ga, isview);
+            this.mapGauges[ga.id] = gauge;
+            return gauge;
+        } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
+            let gauge = OneControlComponent.initElement(ga, res, ref, isview, this.authService.checkPermission.bind(this.authService));
             this.mapGauges[ga.id] = gauge;
             return gauge;
         } else if (ga.type.startsWith(PanelComponent.TypeTag)) {

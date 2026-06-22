@@ -1,0 +1,15 @@
+<div class="onecontrol" [style.background-color]="options.background" [style.font-size.px]="options.fontSize"
+    [style.opacity]="disabled ? 0.5 : 1">
+    <span class="onecontrol-label" [style.color]="options.labelColor">{{ options.label }}</span>
+    <div class="onecontrol-btn" [style.background-color]="options.buttonBackground" [style.color]="options.buttonColor"
+        [class.readonly]="isReadonly || disabled" (click)="onDecrement()">
+        <span class="onecontrol-sign">&#8722;</span>
+    </div>
+    <div class="onecontrol-value" [style.background-color]="options.valueBackground" [style.color]="options.valueColor">
+        <span #valueText>{{ displayValue }}</span>
+    </div>
+    <div class="onecontrol-btn" [style.background-color]="options.buttonBackground" [style.color]="options.buttonColor"
+        [class.readonly]="isReadonly || disabled" (click)="onIncrement()">
+        <span class="onecontrol-sign">+</span>
+    </div>
+</div>

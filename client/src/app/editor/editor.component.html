@@ -211,6 +211,10 @@
                                 (click)="setMode('own_ctrl-scheduler')">
                                 <span class="material-icon-tool material-icons" style="font-size: 23px;">schedule</span>
                             </div>
+                            <div class="svg-tool-button" matTooltip="{{'editor.controls-onecontrol' | translate}}" [ngClass]="{'svg-tool-active': isModeActive('own_ctrl-onecontrol')}"
+                                (click)="setMode('own_ctrl-onecontrol')">
+                                <span class="material-icon-tool material-icons" style="font-size: 23px;">exposure</span>
+                            </div>
                         </div>
                     </mat-expansion-panel>
                     <!-- SHAPES -->

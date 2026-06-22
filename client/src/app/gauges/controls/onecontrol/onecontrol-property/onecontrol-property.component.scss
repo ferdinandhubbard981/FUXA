@@ -1,0 +1,38 @@
+.container {
+    min-width: 660px;
+}
+
+.dialog-title {
+    cursor: move;
+}
+
+.dialog-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    cursor: pointer;
+}
+
+.block {
+    margin-bottom: 10px;
+}
+
+.field-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.mt10 {
+    margin-top: 10px;
+}
+
+.my-form-field span {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.dialog-action {
+    display: flex;
+    justify-content: flex-end;
+}
