@@ -4,6 +4,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 export class OneControlOptions {
     label = 'RWY CTL';
     step = 1;
+    feedbackVariableId: string = null;
     background = '#292929';
     buttonBackground = '#292929';
     valueBackground = '#405F3D';

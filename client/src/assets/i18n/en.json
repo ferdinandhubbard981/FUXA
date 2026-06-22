@@ -604,6 +604,8 @@
     "editor.controls-onecontrol": "Increment control",
     "editor.controls-onecontrol-settings": "Increment control settings",
     "editor.controls-onecontrol-label": "Label",
+    "editor.controls-onecontrol-command-tag": "Command tag (sent on +/-)",
+    "editor.controls-onecontrol-feedback-tag": "Feedback tag (incoming value)",
     "editor.controls-video": "Video",
     "editor.controls-video-settings": "Video settings",
     "editor.controls-scheduler": "Time Scheduler",

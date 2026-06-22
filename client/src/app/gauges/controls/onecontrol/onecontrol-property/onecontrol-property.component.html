@@ -7,7 +7,13 @@
                 <flex-auth [name]="name" [permission]="property.permission" [permissionRoles]="property.permissionRoles" #flexauth></flex-auth>
             </div>
             <div class="block">
+                <div class="section-title">{{'editor.controls-onecontrol-command-tag' | translate}}</div>
                 <flex-head [data]="data" [property]="property" #flexhead [withStaticValue]="false"></flex-head>
+            </div>
+            <div class="block">
+                <div class="section-title">{{'editor.controls-onecontrol-feedback-tag' | translate}}</div>
+                <flex-variable [data]="data" [variableId]="options.feedbackVariableId" (onchange)="onFeedbackChanged($event)"
+                    [withStaticValue]="false"></flex-variable>
             </div>
             <div class="field-row mt10">
                 <div class="my-form-field">

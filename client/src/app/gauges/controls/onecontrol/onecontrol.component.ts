@@ -20,8 +20,9 @@ export class OneControlComponent extends GaugeBaseComponent {
 
     static getSignals(pro: any) {
         let res: string[] = [];
-        if (pro.variableId) {
-            res.push(pro.variableId);
+        // the displayed number is driven by the incoming feedback tag (separate from the command tag written on +/-)
+        if (pro.options?.feedbackVariableId) {
+            res.push(pro.options.feedbackVariableId);
         }
         return res;
     }

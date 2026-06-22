@@ -40,6 +40,10 @@ export class OneControlPropertyComponent {
         this.dialogRef.close();
     }
 
+    onFeedbackChanged(event: any): void {
+        this.options.feedbackVariableId = event?.variableId ?? null;
+    }
+
     onOkClick(): void {
         this.options.label = this.property.text;
         this.data.settings.property = this.flexhead ? this.flexhead.getProperty() : this.property;
