@@ -26,6 +26,8 @@ export class OneControlButtonComponent {
 
     options: OneControlOptions = new OneControlOptions();
     value: number = null;
+    commandValue: number = null;
+    feedbackValue: number = null;
     displayValue = '';
     isReadonly = false;
     disabled = false;
@@ -45,8 +47,17 @@ export class OneControlButtonComponent {
     }
 
     setValue(value: number) {
-        this.value = value;
-        this.refreshDisplay();
+        this.setFeedbackValue(value);
+    }
+
+    setCommandValue(value: number) {
+        this.commandValue = value;
+        this.refreshValue();
+    }
+
+    setFeedbackValue(value: number) {
+        this.feedbackValue = value;
+        this.refreshValue();
     }
 
     setDisabled(state: boolean) {
@@ -71,11 +82,33 @@ export class OneControlButtonComponent {
         }
         const current = Number.isFinite(this.value) ? this.value : 0;
         const next = current + delta;
+        this.commandValue = next;
         this.value = next;
         this.refreshDisplay();
         if (this.onUpdate) {
             this.onUpdate(next.toString());
         }
+    }
+
+    private commandIsActive(): boolean {
+        // the command tag is considered "null" when it is not a digit or is 0
+        return Number.isFinite(this.commandValue) && this.commandValue !== 0;
+    }
+
+    private refreshValue() {
+        if (this.commandIsActive()) {
+            // the displayed digit is only updated by the feedback when it matches the commanded value,
+            // otherwise it keeps showing the commanded value
+            if (Number.isFinite(this.feedbackValue) && this.feedbackValue === this.commandValue) {
+                this.value = this.feedbackValue;
+            } else {
+                this.value = this.commandValue;
+            }
+        } else {
+            // the command tag is null (not a digit, including 0): the feedback tag's value applies
+            this.value = Number.isFinite(this.feedbackValue) ? this.feedbackValue : null;
+        }
+        this.refreshDisplay();
     }
 
     private refreshDisplay() {
