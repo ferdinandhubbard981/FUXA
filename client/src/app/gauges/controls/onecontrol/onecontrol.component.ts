@@ -20,11 +20,6 @@ export class OneControlComponent extends GaugeBaseComponent {
 
     static getSignals(pro: any) {
         let res: string[] = [];
-        // the command tag is needed to gate the feedback: the displayed digit follows the
-        // feedback only when the feedback matches the commanded value (or when the command is null/0)
-        if (pro.variableId) {
-            res.push(pro.variableId);
-        }
         // the displayed number is driven by the incoming feedback tag (separate from the command tag written on +/-)
         if (pro.options?.feedbackVariableId) {
             res.push(pro.options.feedbackVariableId);
@@ -58,13 +53,7 @@ export class OneControlComponent extends GaugeBaseComponent {
                 if (Number.isNaN(value)) {
                     value = Number(sig.value);
                 }
-                const commandVariableId = ga.property?.variableId;
-                const feedbackVariableId = ga.property?.options?.feedbackVariableId;
-                if (commandVariableId && sig.id === commandVariableId) {
-                    widget.setCommandValue(value);
-                } else if (feedbackVariableId && sig.id === feedbackVariableId) {
-                    widget.setFeedbackValue(value);
-                }
+                widget.setFeedbackValue(value);
             }
         } catch (err) {
             console.error(err);

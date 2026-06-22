@@ -26,7 +26,9 @@ export class OneControlButtonComponent {
 
     options: OneControlOptions = new OneControlOptions();
     value: number = null;
-    commandValue: number = null;
+    // the value last commanded through the +/- buttons, awaiting confirmation from the feedback tag.
+    // null means there is no pending command and the feedback tag drives the displayed digit.
+    pendingCommand: number = null;
     feedbackValue: number = null;
     displayValue = '';
     isReadonly = false;
@@ -56,14 +58,20 @@ export class OneControlButtonComponent {
         this.setFeedbackValue(value);
     }
 
-    setCommandValue(value: number) {
-        this.commandValue = value;
-        this.refreshValue();
-    }
-
     setFeedbackValue(value: number) {
         this.feedbackValue = value;
-        this.refreshValue();
+        if (this.pendingCommand !== null) {
+            // while a command is pending the digit only follows the feedback once it matches the
+            // commanded value (including 0); non-matching/stale feedback is ignored to avoid rubber-banding
+            if (Number.isFinite(value) && value === this.pendingCommand) {
+                this.pendingCommand = null;
+                this.value = value;
+            }
+        } else {
+            // no pending command: the feedback tag's value applies
+            this.value = Number.isFinite(value) ? value : null;
+        }
+        this.refreshDisplay();
     }
 
     setDisabled(state: boolean) {
@@ -88,7 +96,8 @@ export class OneControlButtonComponent {
         }
         const current = Number.isFinite(this.value) ? this.value : 0;
         const next = current + delta;
-        this.commandValue = next;
+        // if the commanded value already equals the current feedback there is nothing to wait for
+        this.pendingCommand = (Number.isFinite(this.feedbackValue) && next === this.feedbackValue) ? null : next;
         this.value = next;
         this.refreshDisplay();
         if (this.onUpdate) {
@@ -96,33 +105,12 @@ export class OneControlButtonComponent {
         }
     }
 
-    private commandIsActive(): boolean {
-        // the command tag is considered "null" when it is not a digit or is 0
-        return Number.isFinite(this.commandValue) && this.commandValue !== 0;
-    }
-
     private feedbackMatchesCommand(): boolean {
-        if (!this.commandIsActive()) {
-            // no active command: the feedback applies, the digit is considered in sync
+        if (this.pendingCommand === null) {
+            // no pending command: the digit is in sync with the feedback
             return true;
         }
-        return Number.isFinite(this.feedbackValue) && this.feedbackValue === this.commandValue;
-    }
-
-    private refreshValue() {
-        if (this.commandIsActive()) {
-            // the displayed digit is only updated by the feedback when it matches the commanded value,
-            // otherwise it keeps showing the commanded value
-            if (Number.isFinite(this.feedbackValue) && this.feedbackValue === this.commandValue) {
-                this.value = this.feedbackValue;
-            } else {
-                this.value = this.commandValue;
-            }
-        } else {
-            // the command tag is null (not a digit, including 0): the feedback tag's value applies
-            this.value = Number.isFinite(this.feedbackValue) ? this.feedbackValue : null;
-        }
-        this.refreshDisplay();
+        return Number.isFinite(this.feedbackValue) && this.feedbackValue === this.pendingCommand;
     }
 
     private refreshDisplay() {
