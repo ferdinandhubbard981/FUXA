@@ -399,6 +399,16 @@ app-root {
     text-align: -moz-center;
 }
 
+/* FUXA override: remove box-shadow/halo for HTML buttons inside SVG foreignObject (html-button) */
+svg foreignObject button.md-btn,
+svg foreignObject button.md-btn-raised,
+foreignObject button.md-btn,
+foreignObject button.md-btn-raised {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    outline: none !important;
+}
+
 .menu-item-content-block .mat-icon {
     display: block;
     font-size: 32px;
