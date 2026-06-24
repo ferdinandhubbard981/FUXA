@@ -109,6 +109,13 @@
 		    format("svg");
 }
 
+@font-face {
+    font-family: "OneControl-Bold";
+    src: local("OneControl Bold"), local("OneControl-Bold"),
+        url("./assets/fonts/onecontrol-bold/OneControlBold.ttf")
+            format("truetype");
+}
+
 /* System and General */
 html {
     height: 100%;

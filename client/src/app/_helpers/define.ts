@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 @Injectable()
 export class Define {
-    static fonts = ['Sans-serif', 'Roboto-Thin', 'Roboto-Light', 'Roboto-Regular', 'Roboto-Medium', 'Roboto-Bold', 'Quicksand-Regular', 'Quicksand-Medium', 'Quicksand-Bold'];
+    static fonts = ['Sans-serif', 'Roboto-Thin', 'Roboto-Light', 'Roboto-Regular', 'Roboto-Medium', 'Roboto-Bold', 'OneControl-Bold', 'Quicksand-Regular', 'Quicksand-Medium', 'Quicksand-Bold'];
 
     static MaterialIconsRegular = `
 10k e951
