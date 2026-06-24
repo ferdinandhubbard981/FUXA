@@ -654,6 +654,7 @@
   "editor.transform-angle-title": "Changer l'angle de rotation",
   "editor.transform-hide": "Masquer",
   "editor.transform-lock": "Verrouiller",
+  "editor.transform-static": "Statique",
 
   "editor.align": "Aligner",
   "editor.align-left-title": "Aligner à gauche",

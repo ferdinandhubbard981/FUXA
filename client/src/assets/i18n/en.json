@@ -775,6 +775,7 @@
     "editor.transform-angle-title": "Change rotation angle",
     "editor.transform-hide": "Hide",
     "editor.transform-lock": "Lock",
+    "editor.transform-static": "Static",
 
     "editor.align": "Align",
     "editor.align-left-title": "Align Left",

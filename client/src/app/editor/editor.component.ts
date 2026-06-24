@@ -117,6 +117,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     panelHyperlinkOpenState: boolean;
     gaugeSettingsHide: boolean = false;
     gaugeSettingsLock: boolean = false;
+    gaugeSettingsStatic: boolean = false;
 
     dashboard: Array<GridsterItem>;
     cardViewType = ViewType.cards;
@@ -1974,10 +1975,19 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    onStaticSelectionToggle(checked: boolean) {
+        let gaugeSettings = this.getGaugeSettings(this.selectedElement);
+        if (gaugeSettings) {
+            gaugeSettings.isStatic = checked;
+            this.setGaugeSettings(gaugeSettings);
+        }
+    }
+
     checkSelectedGaugeSettings() {
         let gaugeSettings = this.getGaugeSettings(this.selectedElement);
         this.gaugeSettingsHide = gaugeSettings?.hide ?? false;
         this.gaugeSettingsLock = gaugeSettings?.lock ?? false;
+        this.gaugeSettingsStatic = gaugeSettings?.isStatic ?? false;
         this.winRef.nativeWindow.svgEditor.lockSelection(gaugeSettings?.lock);
     }
 

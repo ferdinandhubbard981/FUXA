@@ -654,6 +654,7 @@
     "editor.transform-angle-title": "改变旋转角度",
     "editor.transform-hide": "隐藏",
     "editor.transform-lock": "锁定",
+    "editor.transform-static": "固定",
 
     "editor.align": "对齐",
     "editor.align-left-title": "向左对齐",

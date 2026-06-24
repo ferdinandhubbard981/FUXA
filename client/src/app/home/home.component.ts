@@ -75,6 +75,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     intervalsScript = new Intervals();
     currentDateTime: Date = new Date();
     private headerItemsMap = new Map<string, HeaderItem[]>();
+    private staticLayer: HTMLElement | null = null;
     private subscriptionLoad: Subscription;
     private subscriptionAlarmsStatus: Subscription;
     private subscriptiongoTo: Subscription;
@@ -166,6 +167,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             this.destroy$.next(null);
             this.destroy$.complete();
             this.intervalsScript.clearIntervals();
+            this.clearStaticLayer();
         } catch (e) {
         }
     }
@@ -442,6 +444,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private checkZoom() {
         if (this.hmi.layout?.zoom && ZoomModeType[this.hmi.layout.zoom] === ZoomModeType.enabled) {
             setTimeout(() => {
+                // Lift elements flagged as static out of the zoom/pan area before panzoom is applied,
+                // so their screen position is not affected by zooming or panning.
+                this.setupStaticLayer();
                 let element: HTMLElement = document.querySelector('#home');
                 if (element && panzoom) {
                     panzoom(element, {
@@ -451,7 +456,78 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
                 this.container.nativeElement.style.overflow = 'hidden';
             }, 1000);
+        } else {
+            this.clearStaticLayer();
         }
+    }
+
+    private clearStaticLayer() {
+        if (this.staticLayer) {
+            this.staticLayer.remove();
+            this.staticLayer = null;
+        }
+    }
+
+    /**
+     * Move the gauges flagged as `isStatic` out of the panned/zoomed view (#home) into a separate
+     * overlay that lives in the (untransformed) container. The overlay reuses the view's SVG
+     * coordinate system and is positioned over the view's initial location, so the static gauges
+     * keep their original on-screen position/size while panzoom transforms only #home.
+     * The elements are moved (not cloned), so their existing value/event bindings keep working.
+     */
+    private setupStaticLayer() {
+        this.clearStaticLayer();
+        if (!this.homeView?.items || !this.fuxaview) {
+            return;
+        }
+        const staticIds = Object.keys(this.homeView.items).filter(id => this.homeView.items[id]?.isStatic);
+        if (!staticIds.length) {
+            return;
+        }
+        const dataContainer: HTMLElement = this.fuxaview.dataContainer?.nativeElement;
+        const svgEl = dataContainer?.querySelector('svg') as SVGSVGElement;
+        const containerEl: HTMLElement = this.container?.nativeElement;
+        if (!svgEl || !containerEl) {
+            return;
+        }
+        // Build the overlay SVG sharing the same coordinate system (viewBox/size) as the view SVG.
+        const overlaySvg = svgEl.cloneNode(false) as SVGSVGElement;
+        overlaySvg.removeAttribute('id');
+        overlaySvg.removeAttribute('class');
+        const containerRect = containerEl.getBoundingClientRect();
+        const svgRect = svgEl.getBoundingClientRect();
+        overlaySvg.style.position = 'absolute';
+        overlaySvg.style.left = (svgRect.left - containerRect.left) + 'px';
+        overlaySvg.style.top = (svgRect.top - containerRect.top) + 'px';
+        overlaySvg.style.width = svgRect.width + 'px';
+        overlaySvg.style.height = svgRect.height + 'px';
+        overlaySvg.style.pointerEvents = 'none';
+
+        let moved = 0;
+        staticIds.forEach(id => {
+            const ele = svgEl.getElementById(id) as SVGElement;
+            if (ele) {
+                ele.style.pointerEvents = 'auto';
+                overlaySvg.appendChild(ele);   // moves the node (and its bindings) out of #home
+                moved++;
+            }
+        });
+        if (!moved) {
+            return;
+        }
+        const layer = document.createElement('div');
+        layer.className = 'fuxa-static-layer';
+        layer.style.position = 'absolute';
+        layer.style.left = '0';
+        layer.style.top = '0';
+        layer.style.right = '0';
+        layer.style.bottom = '0';
+        layer.style.overflow = 'hidden';
+        layer.style.pointerEvents = 'none';
+        layer.style.zIndex = '10';
+        layer.appendChild(overlaySvg);
+        containerEl.appendChild(layer);
+        this.staticLayer = layer;
     }
 
     private loadHeaderItems() {

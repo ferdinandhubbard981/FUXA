@@ -209,6 +209,7 @@ export class GaugeSettings {
     label = '';             // Gauge type label
     hide = false;
     lock = false;
+    isStatic = false;       // element stays fixed on screen, not affected by view zoom/pan
     constructor(public id: string, public type: string) {
     }
 }

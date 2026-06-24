@@ -671,6 +671,7 @@
     "editor.transform-angle-title": "回転角度を変更",
     "editor.transform-hide": "非表示",
     "editor.transform-lock": "ロック",
+    "editor.transform-static": "固定",
 
     "editor.align": "配置",
     "editor.align-left-title": "左揃え",

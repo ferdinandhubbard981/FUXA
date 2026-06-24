@@ -653,6 +653,7 @@
     "editor.transform-angle-title": "Ändra rotationsvinkel",
     "editor.transform-hide": "Dölj",
     "editor.transform-lock": "Lås",
+    "editor.transform-static": "Statisk",
 
     "editor.align": "Justera",
     "editor.align-left-title": "Justera vänster",
