@@ -109,6 +109,7 @@ import { FlexVariableComponent } from './gauges/gauge-property/flex-variable/fle
 import { MatSelectSearchModule } from './gui-helpers/mat-select-search/mat-select-search.module';
 import { HtmlInputComponent } from './gauges/controls/html-input/html-input.component';
 import { HtmlButtonComponent } from './gauges/controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from './gauges/controls/html-button-two/html-button-two.component';
 import { HtmlSelectComponent } from './gauges/controls/html-select/html-select.component';
 import { HtmlChartComponent } from './gauges/controls/html-chart/html-chart.component';
 import { HtmlGraphComponent } from './gauges/controls/html-graph/html-graph.component';
@@ -300,6 +301,7 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
         GaugeBaseComponent,
         HtmlInputComponent,
         HtmlButtonComponent,
+        HtmlButtonTwoComponent,
         InputPropertyComponent,
         HtmlSelectComponent,
         HtmlChartComponent,

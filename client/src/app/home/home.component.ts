@@ -26,6 +26,7 @@ import { GridsterConfig } from 'angular-gridster2';
 import panzoom from 'panzoom';
 import { filter, takeUntil } from 'rxjs/operators';
 import { HtmlButtonComponent } from '../gauges/controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from '../gauges/controls/html-button-two/html-button-two.component';
 import { User } from '../_models/user';
 import { UserInfo } from '../users/user-edit/user-edit.component';
 import { Intervals } from '../_helpers/intervals';
@@ -360,9 +361,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private processValueInHeaderItem(varTag: Variable) {
         this.headerItemsMap.get(varTag.id)?.forEach(item => {
             if (item.status.variablesValue[varTag.id] !== varTag.value) {
+                const target = item.element ?? Utils.findElementByIdRecursive(this.header.nativeElement, item.id);
                 HtmlButtonComponent.processValue(
                     <GaugeSettings>{ property: item.property },
-                    item.element ?? Utils.findElementByIdRecursive(this.header.nativeElement, item.id),
+                    target,
+                    varTag,
+                    item.status,
+                    item.type === 'label'
+                );
+                HtmlButtonTwoComponent.processValue(
+                    <GaugeSettings>{ property: item.property },
+                    target,
                     varTag,
                     item.status,
                     item.type === 'label'
@@ -541,7 +550,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             item.status.variablesValue = {};
             item.element = Utils.findElementByIdRecursive(this.header.nativeElement, item.id);
             (item as any).text = this.languageService.getTranslation(item.property?.text) ?? item.property?.text;
-            const signalsIds = HtmlButtonComponent.getSignals(item.property);
+            const sigsA = HtmlButtonComponent.getSignals(item.property) || [];
+            const sigsB = HtmlButtonTwoComponent.getSignals(item.property) || [];
+            const signalsIds = Array.from(new Set([...sigsA, ...sigsB]));
             signalsIds.forEach(sigId => {
                 if (!this.headerItemsMap.has(sigId)) {
                     this.headerItemsMap.set(sigId, []);

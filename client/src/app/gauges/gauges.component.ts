@@ -7,6 +7,7 @@ import { ValueComponent } from './controls/value/value.component';
 import { GaugeDialogType } from './gauge-property/gauge-property.component';
 import { HtmlInputComponent } from './controls/html-input/html-input.component';
 import { HtmlButtonComponent } from './controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from './controls/html-button-two/html-button-two.component';
 import { HtmlSelectComponent } from './controls/html-select/html-select.component';
 import { HtmlChartComponent } from './controls/html-chart/html-chart.component';
 import { HtmlGraphComponent } from './controls/html-graph/html-graph.component';
@@ -65,14 +66,14 @@ export class GaugesManager {
     // list of gauges with input
     static GaugeWithProperty = [HtmlInputComponent.prefix, HtmlSelectComponent.prefix, HtmlSwitchComponent.prefix];
     // list of gauges tags to check who as events like mouse click
-    static GaugeWithEvents = [HtmlButtonComponent.TypeTag, GaugeSemaphoreComponent.TypeTag, ShapesComponent.TypeTag, ProcEngComponent.TypeTag,
+    static GaugeWithEvents = [HtmlButtonComponent.TypeTag, HtmlButtonTwoComponent.TypeTag, GaugeSemaphoreComponent.TypeTag, ShapesComponent.TypeTag, ProcEngComponent.TypeTag,
     ApeShapesComponent.TypeTag, HtmlImageComponent.TypeTag, HtmlInputComponent.TypeTag, PanelComponent.TypeTag, HtmlSelectComponent.TypeTag,
     HtmlSwitchComponent.TypeTag];
     // list of gauges tags to check who as events like mouse click
-    static GaugeWithActions = [ApeShapesComponent, PipeComponent, ProcEngComponent, ShapesComponent, HtmlButtonComponent, HtmlSelectComponent,
+    static GaugeWithActions = [ApeShapesComponent, PipeComponent, ProcEngComponent, ShapesComponent, HtmlButtonComponent, HtmlButtonTwoComponent, HtmlSelectComponent,
         ValueComponent, HtmlInputComponent, GaugeSemaphoreComponent, HtmlImageComponent, PanelComponent, HtmlVideoComponent];
     // list of gauges components
-    static Gauges = [ValueComponent, HtmlInputComponent, HtmlButtonComponent, HtmlBagComponent,
+    static Gauges = [ValueComponent, HtmlInputComponent, HtmlButtonComponent, HtmlButtonTwoComponent, HtmlBagComponent,
         HtmlSelectComponent, HtmlChartComponent, GaugeProgressComponent, GaugeSemaphoreComponent, ShapesComponent, ProcEngComponent, ApeShapesComponent,
         PipeComponent, SliderComponent, HtmlSwitchComponent, HtmlGraphComponent, HtmlIframeComponent, HtmlTableComponent,
         HtmlImageComponent, PanelComponent, HtmlVideoComponent, HtmlSchedulerComponent, OneControlComponent];
@@ -182,6 +183,8 @@ export class GaugesManager {
             GaugeProgressComponent.initElement(ga);
         } else if (ga.type.startsWith(HtmlButtonComponent.TypeTag)) {
             HtmlButtonComponent.initElement(ga);
+        } else if (ga.type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
+            HtmlButtonTwoComponent.initElement(ga);
         } else if (ga.type.startsWith(HtmlChartComponent.TypeTag)) {
             delete this.mapGauges[ga.id];
             let gauge = HtmlChartComponent.detectChange(ga, res, ref);
@@ -723,6 +726,10 @@ export class GaugesManager {
                 colors.fill = HtmlButtonComponent.getFillColor(eles[0]);
                 colors.stroke = HtmlButtonComponent.getStrokeColor(eles[0]);
                 return true;
+            } else if (ele.type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
+                colors.fill = HtmlButtonTwoComponent.getFillColor(eles[0]);
+                colors.stroke = HtmlButtonTwoComponent.getStrokeColor(eles[0]);
+                return true;
             } else if (ele.type.startsWith(HtmlInputComponent.TypeTag)) {
                 colors.fill = HtmlInputComponent.getFillColor(eles[0]);
                 colors.stroke = HtmlInputComponent.getStrokeColor(eles[0]);
@@ -751,6 +758,8 @@ export class GaugesManager {
                     GaugeProgressComponent.initElementColor(bkcolor, color, elems[i]);
                 } else if (type.startsWith(HtmlButtonComponent.TypeTag)) {
                     HtmlButtonComponent.initElementColor(bkcolor, color, elems[i]);
+                } else if (type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
+                    HtmlButtonTwoComponent.initElementColor(bkcolor, color, elems[i]);
                 } else if (type.startsWith(HtmlInputComponent.TypeTag)) {
                     HtmlInputComponent.initElementColor(bkcolor, color, elems[i]);
                 } else if (type.startsWith(HtmlSelectComponent.TypeTag)) {
@@ -769,6 +778,8 @@ export class GaugesManager {
         if (type.startsWith(GaugeProgressComponent.TypeTag)) {
             return 'progress_';
         } else if (type.startsWith(HtmlButtonComponent.TypeTag)) {
+            return 'button_';
+        } else if (type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
             return 'button_';
         } else if (type.startsWith(HtmlInputComponent.TypeTag)) {
             return 'input_';
@@ -923,6 +934,9 @@ export class GaugesManager {
             return gauge;
         } else if (ga.type.startsWith(HtmlButtonComponent.TypeTag)) {
             let gauge = HtmlButtonComponent.initElement(ga, textTranslation);
+            return gauge || true;
+        } else if (ga.type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
+            let gauge = HtmlButtonTwoComponent.initElement(ga, textTranslation);
             return gauge || true;
         } else if (ga.type.startsWith(PipeComponent.TypeTag)) {
             let gauge = PipeComponent.initElement(ga, isview, parent?.getGaugeStatus(ga));

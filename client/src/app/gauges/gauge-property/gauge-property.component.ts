@@ -11,6 +11,7 @@ import { PermissionData, PermissionDialogComponent } from './permission-dialog/p
 import { SettingsService } from '../../_services/settings.service';
 import { Device } from '../../_models/device';
 import { HtmlButtonComponent } from '../controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from '../controls/html-button-two/html-button-two.component';
 
 @Component({
     selector: 'gauge-property',
@@ -142,6 +143,10 @@ export class GaugePropertyComponent implements AfterViewInit {
 
     isButton() {
         return this.data.settings?.type === HtmlButtonComponent.TypeTag;
+    }
+
+    isButtonTwo() {
+        return this.data.settings?.type === HtmlButtonTwoComponent.TypeTag;
     }
 
     isAlarmToShow() {

@@ -22,6 +22,7 @@ import { BagPropertyComponent } from '../gauges/controls/html-bag/bag-property/b
 import { SliderPropertyComponent } from '../gauges/controls/slider/slider-property/slider-property.component';
 import { HtmlInputComponent } from '../gauges/controls/html-input/html-input.component';
 import { HtmlButtonComponent } from '../gauges/controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from '../gauges/controls/html-button-two/html-button-two.component';
 import { HtmlSelectComponent } from '../gauges/controls/html-select/html-select.component';
 import { ValueComponent } from '../gauges/controls/value/value.component';
 import { GaugeProgressComponent } from '../gauges/controls/gauge-progress/gauge-progress.component';
@@ -1839,7 +1840,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         } else if (type.startsWith(ValueComponent.TypeTag)) {
             return this.translateService.instant('editor.controls-output-settings');
         } else if (type.startsWith(HtmlButtonComponent.TypeTag)) {
-            return this.translateService.instant('editor.controls-button-settings');
+            return "Button-two settings";
+        } else if (type.startsWith(HtmlButtonTwoComponent.TypeTag)) {
+            return this.translateService.instant('editor.controls-button-two-settings');
         } else if (type.startsWith(HtmlSelectComponent.TypeTag)) {
             return this.translateService.instant('editor.controls-select-settings');
         } else if (type.startsWith(GaugeProgressComponent.TypeTag)) {

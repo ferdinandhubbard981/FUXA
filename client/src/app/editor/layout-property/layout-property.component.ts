@@ -13,6 +13,7 @@ import { ResourcesService } from '../../_services/resources.service';
 import { interval, Subject, takeUntil } from 'rxjs';
 import { GaugeDialogType, GaugePropertyComponent } from '../../gauges/gauge-property/gauge-property.component';
 import { HtmlButtonComponent } from '../../gauges/controls/html-button/html-button.component';
+import { HtmlButtonTwoComponent } from '../../gauges/controls/html-button-two/html-button-two.component';
 import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
 import { MatTabChangeEvent } from '@angular/material/tabs';
 import 'codemirror/mode/css/css';
