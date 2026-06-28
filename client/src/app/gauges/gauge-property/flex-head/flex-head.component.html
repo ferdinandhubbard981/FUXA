@@ -3,6 +3,20 @@
         <flex-variable [data]="data" (onchange)="setVariable($event)" [variableId]="property.variableId" [variableValue]="property.variableValue" [bitmask]="property.bitmask"
          [withStaticValue]="withStaticValue" [withBitmask]="withBitmask">
         </flex-variable>
+        <div class="color-fields" style="display:flex; gap:8px; margin-top:8px;">
+            <div class="my-form-field">
+                <span>Fill</span>
+                <input readonly [(colorPicker)]="property.options.fill" class="color-fill" [style.background]="property.options.fill"
+                    [cpAlphaChannel]="'always'" [cpPosition]="'top'" (colorPickerChange)="onChangeFillColor($event)"
+                    [cpPresetColors]="defaultColor" [cpCancelButton]="true" [cpOKButton]="true" />
+            </div>
+            <div class="my-form-field">
+                <span>Stroke</span>
+                <input readonly [(colorPicker)]="property.options.stroke" class="color-stroke" [style.background]="property.options.stroke"
+                    [cpAlphaChannel]="'always'" [cpPosition]="'top'" (colorPickerChange)="onChangeStrokeColor($event)"
+                    [cpPresetColors]="defaultColor" [cpCancelButton]="true" [cpOKButton]="true" />
+            </div>
+        </div>
     </div>
     <flex-input #flexinput *ngIf="withProperty" [data]="data" [property]="property" [ranges]="property.ranges" [default]="defaultValue" [propertyType]="withProperty" style="padding-bottom: 5px">
     </flex-input>

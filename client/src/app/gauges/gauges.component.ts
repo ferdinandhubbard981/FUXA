@@ -178,51 +178,89 @@ export class GaugesManager {
      * @param ga
      */
     initInEditor(ga: GaugeSettings, res: any, ref: any, elementWithLanguageText?: any) {
+        const applyPropertyColor = (g: GaugeSettings) => {
+            try {
+                if (!g) { return; }
+                const ele = document.getElementById(g.id);
+                if (ele && g.property && g.property.options) {
+                    const bk = g.property.options.fill;
+                    const color = g.property.options.stroke;
+                    if (bk || color) {
+                        GaugesManager.initElementColor(bk, color, [ele]);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
         if (ga.type.startsWith(GaugeProgressComponent.TypeTag)) {
             GaugeProgressComponent.initElement(ga);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlButtonComponent.TypeTag)) {
             HtmlButtonComponent.initElement(ga);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlChartComponent.TypeTag)) {
             delete this.mapGauges[ga.id];
             let gauge = HtmlChartComponent.detectChange(ga, res, ref);
             this.setChartPropety(gauge, ga.property);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlGraphComponent.TypeTag)) {
             delete this.mapGauges[ga.id];
             let gauge = HtmlGraphComponent.detectChange(ga, res, ref);
             this.setGraphPropety(gauge, ga.property);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlBagComponent.TypeTag)) {
             this.mapGauges[ga.id] = HtmlBagComponent.detectChange(ga, res, ref);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(PipeComponent.TypeTag)) {
             this.mapGauges[ga.id] = PipeComponent.detectChange(ga, res, this.winRef);
+            applyPropertyColor(ga);
             return this.mapGauges[ga.id];
         } else if (ga.type.startsWith(SliderComponent.TypeTag)) {
-            return this.mapGauges[ga.id] = SliderComponent.detectChange(ga, res, ref);
+            const sl = SliderComponent.detectChange(ga, res, ref);
+            this.mapGauges[ga.id] = sl;
+            applyPropertyColor(ga);
+            return this.mapGauges[ga.id];
         } else if (ga.type.startsWith(HtmlSwitchComponent.TypeTag)) {
-            return this.mapGauges[ga.id] = HtmlSwitchComponent.detectChange(ga, res, ref);
+            const hs = HtmlSwitchComponent.detectChange(ga, res, ref);
+            this.mapGauges[ga.id] = hs;
+            applyPropertyColor(ga);
+            return this.mapGauges[ga.id];
         } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
-            return this.mapGauges[ga.id] = OneControlComponent.initElement(ga, res, ref, false);
+            const oc = OneControlComponent.initElement(ga, res, ref, false);
+            this.mapGauges[ga.id] = oc;
+            applyPropertyColor(ga);
+            return this.mapGauges[ga.id];
         } else if (ga.type.startsWith(HtmlIframeComponent.TypeTag)) {
             HtmlIframeComponent.detectChange(ga);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlTableComponent.TypeTag)) {
             delete this.mapGauges[ga.id];
             let gauge = HtmlTableComponent.detectChange(ga, res, ref);
             this.setTablePropety(gauge, ga.property);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlSchedulerComponent.TypeTag)) {
             delete this.mapGauges[ga.id];
             let gauge = HtmlSchedulerComponent.detectChange(ga, res, ref);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlImageComponent.TypeTag)) {
             HtmlImageComponent.detectChange(ga, true);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlVideoComponent.TypeTag)) {
             HtmlVideoComponent.initElement(ga);
+            applyPropertyColor(ga);
         } else if (elementWithLanguageText) {
             GaugeBaseComponent.setLanguageText(elementWithLanguageText, ga.property?.text);
+            applyPropertyColor(ga);
         } else if (ga.type.startsWith(HtmlInputComponent.TypeTag)) {
             HtmlInputComponent.initElement(ga);
+            applyPropertyColor(ga);
         }
+        applyPropertyColor(ga);
         return false;
     }
 
@@ -812,6 +850,21 @@ export class GaugesManager {
      * @param parent parent that call the function, should be from a FuxaViewComponent
      */
     initElementAdded(ga: GaugeSettings, res: any, ref: any, isview: boolean, parent?: FuxaViewComponent, textTranslation?: string, sourceDeviceTags?: Tag[]) {
+        const applyPropertyColor = (g: GaugeSettings) => {
+            try {
+                if (!g) { return; }
+                const ele = document.getElementById(g.id);
+                if (ele && g.property && g.property.options) {
+                    const bk = g.property.options.fill;
+                    const color = g.property.options.stroke;
+                    if (bk || color) {
+                        GaugesManager.initElementColor(bk, color, [ele]);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
         if (!ga || !ga.type) {
             console.error('!TOFIX', ga);
             return null;
@@ -850,6 +903,7 @@ export class GaugesManager {
                 }
                 this.mapGauges[ga.id] = gauge;
             }
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlGraphComponent.TypeTag)) {
             let gauge: GraphBaseComponent = HtmlGraphComponent.initElement(ga, res, ref, isview);
@@ -865,27 +919,34 @@ export class GaugesManager {
                 });
                 this.mapGauges[ga.id] = gauge;
             }
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlBagComponent.TypeTag)) {
             let gauge: NgxGaugeComponent = HtmlBagComponent.initElement(ga, res, ref, isview);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(SliderComponent.TypeTag)) {
             let gauge: NgxNouisliderComponent = SliderComponent.initElement(ga, res, ref, isview);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlInputComponent.TypeTag)) {
             let gauge = HtmlInputComponent.initElement(ga, isview);
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(HtmlSelectComponent.TypeTag)) {
             let gauge = HtmlSelectComponent.initElement(ga, isview);
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(GaugeProgressComponent.TypeTag)) {
             let gauge = GaugeProgressComponent.initElement(ga);
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(HtmlSwitchComponent.TypeTag)) {
             let gauge = HtmlSwitchComponent.initElement(ga, res, ref, this.authService.checkPermission.bind(this.authService));
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlTableComponent.TypeTag)) {
             let gauge = HtmlTableComponent.initElement(ga, res, ref, isview);
@@ -899,43 +960,53 @@ export class GaugesManager {
                 });
                 this.mapGauges[ga.id] = gauge;
             }
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlSchedulerComponent.TypeTag)) {
             let gauge = HtmlSchedulerComponent.initElement(ga, res, ref, isview);
             if (gauge) {
                 this.mapGauges[ga.id] = gauge;
             }
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlIframeComponent.TypeTag)) {
             let gauge = HtmlIframeComponent.initElement(ga, isview);
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(HtmlImageComponent.TypeTag)) {
             let gauge = HtmlImageComponent.initElement(ga, isview);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(OneControlComponent.TypeTag)) {
             let gauge = OneControlComponent.initElement(ga, res, ref, isview, this.authService.checkPermission.bind(this.authService));
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(PanelComponent.TypeTag)) {
             let gauge: FuxaViewComponent = PanelComponent.initElement(ga, res, ref, this, this.hmiService.hmi, isview, parent);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge;
         } else if (ga.type.startsWith(HtmlButtonComponent.TypeTag)) {
             let gauge = HtmlButtonComponent.initElement(ga, textTranslation);
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(PipeComponent.TypeTag)) {
             let gauge = PipeComponent.initElement(ga, isview, parent?.getGaugeStatus(ga));
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge || true;
         } else if (ga.type.startsWith(HtmlVideoComponent.TypeTag)) {
             let gauge = HtmlVideoComponent.initElement(ga, isview);
             this.mapGauges[ga.id] = gauge;
+            applyPropertyColor(ga);
             return gauge || true;
         } else {
             let ele = document.getElementById(ga.id);
             ele?.setAttribute('data-name', ga.name);
             GaugeBaseComponent.setLanguageText(ele, textTranslation);
+            applyPropertyColor(ga);
             return ele || true;
         }
     }

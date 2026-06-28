@@ -55,11 +55,25 @@ export class FlexHeadComponent implements OnInit, OnDestroy {
         if (!this.property) {
             this.property = new GaugeProperty();
         }
+        // ensure options object exists to store fill/stroke defaults
+        if (!this.property.options) {
+            this.property.options = {};
+        }
     }
 
     ngOnDestroy() {
         this._onDestroy.next(null);
         this._onDestroy.complete();
+    }
+
+    onChangeFillColor(event: string) {
+        this.property.options = this.property.options || {};
+        this.property.options.fill = event;
+    }
+
+    onChangeStrokeColor(event: string) {
+        this.property.options = this.property.options || {};
+        this.property.options.stroke = event;
     }
 
     getProperty() {
