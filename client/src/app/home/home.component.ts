@@ -480,14 +480,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.homeView?.items || !this.fuxaview) {
             return;
         }
-        const staticIds = Object.keys(this.homeView.items).filter(id => this.homeView.items[id]?.isStatic);
-        if (!staticIds.length) {
-            return;
-        }
         const dataContainer: HTMLElement = this.fuxaview.dataContainer?.nativeElement;
         const svgEl = dataContainer?.querySelector('svg') as SVGSVGElement;
         const containerEl: HTMLElement = this.container?.nativeElement;
         if (!svgEl || !containerEl) {
+            return;
+        }
+        // Collect static elements in DOM order (document order) so their
+        // relative z-order is preserved when moved into the static overlay.
+        const staticNodes = Array.from(svgEl.querySelectorAll('[id]')).filter((el: any) => this.homeView.items[el.id]?.isStatic);
+        if (!staticNodes.length) {
             return;
         }
         // Build the overlay SVG sharing the same coordinate system (viewBox/size) as the view SVG.
@@ -504,8 +506,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         overlaySvg.style.pointerEvents = 'none';
 
         let moved = 0;
-        staticIds.forEach(id => {
-            const ele = svgEl.getElementById(id) as SVGElement;
+        // Append nodes in document order to preserve how they were rendered
+        staticNodes.forEach((ele: any) => {
             if (ele) {
                 ele.style.pointerEvents = 'auto';
                 overlaySvg.appendChild(ele);   // moves the node (and its bindings) out of #home
