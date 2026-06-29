@@ -113,6 +113,12 @@ export class GaugePropertyComponent implements AfterViewInit {
         this.flexAction.onAddAction();
     }
 
+    onTextVariableChanged(event: any) {
+        if (!event) { return; }
+        this.property.textId = event.variableId;
+        this.property.text = event.variableValue;
+    }
+
     onRangeViewToggle() {
         this.flexHead.onRangeViewToggle(this.slideView);
     }

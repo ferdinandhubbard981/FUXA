@@ -30,6 +30,10 @@ export class HtmlButtonComponent extends GaugeBaseComponent {
         if (pro?.variableId) {
             res.push(pro.variableId);
         }
+        // support a dedicated tag for the button text
+        if (pro?.textId) {
+            res.push(pro.textId);
+        }
         if (pro?.actions && pro.actions.length) {
             pro.actions.forEach(act => {
                 res.push(act.variableId);
@@ -127,6 +131,20 @@ export class HtmlButtonComponent extends GaugeBaseComponent {
                     button.textContent = sig.value;
                     return;
                 }
+
+                // If a dedicated variable/tag is associated to this button's text, update the displayed text
+                if (ga && ga.property && ga.property.textId && ga.property.textId === sig.id) {
+                    try {
+                        const newText = (sig.value !== null && sig.value !== undefined) ? String(sig.value) : '';
+                        const icon = ga.property.icon;
+                        const image = ga.property.image;
+                        // Rebuild the button content to preserve icon/image layout while updating text
+                        this.setButtonContent(button, newText, icon, image);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+
                 let val = parseFloat(sig.value);
                 if (Number.isNaN(val)) {
                     // maybe boolean

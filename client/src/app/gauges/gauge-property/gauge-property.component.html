@@ -24,7 +24,10 @@
 						</div>
 						<div class="my-form-field ml10" *ngIf="isTextToShow()">
 							<span>{{'gauges.property-text' | translate}}</span>
-							<input [(ngModel)]="property.text" style="width: 250px" type="text" placeholder="{{'gauges.property-language-text' | translate}}">
+							<input [(ngModel)]="property.text" style="width: 200px" type="text" placeholder="{{'gauges.property-language-text' | translate}}">
+							<!-- allow binding text to a tag for buttons -->
+							<flex-variable *ngIf="isButton()" style="display:inline-block; margin-left:8px" [data]="data" (onchange)="onTextVariableChanged($event)"
+								[variableId]="property.textId" [variableValue]="property.text" [withStaticValue]="false"></flex-variable>
 						</div>
 						<div class="my-form-field ml10 icon-property-field" *ngIf="isButton()">
 							<span>{{'gauges.property-icon' | translate}}</span>

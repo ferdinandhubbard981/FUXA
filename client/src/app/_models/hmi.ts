@@ -231,6 +231,7 @@ export class GaugeProperty {
     options: any;
     readonly: boolean;
     text: string;               // Text property (used by button)
+    textId?: string;           // Optional variable/tag id to bind dynamic text
     icon?: string;              // Optional Material icon (used by button)
     image?: string;             // Optional image resource (used by button)
 }
