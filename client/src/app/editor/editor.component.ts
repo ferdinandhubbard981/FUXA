@@ -1209,9 +1209,11 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Import a MimicSegments XML file into the current SVG view.
-     * Structure: MimicSegments > MimicSegment > svg > g > line | path
-     * Each line/path is rendered as a native SVG element in the editor canvas.
+     * Import a Mimic XML file into the current SVG view.
+     * Structure: Mimic > MimicSegments > MimicSegment > svg > g > line | path
+     *            Mimic > GenericSvgs > svg (a series of full <svg> graphics)
+     * Each line/path is rendered as a native SVG element in the editor canvas; every generic
+     * <svg> is rendered as its own static shape.
      * @param event file resource
      */
     onMimicFileChangeListener(event) {
@@ -1242,10 +1244,11 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
-     * Parse the Mimic XML and add each MimicSegment and MimicBackground as a separate shape to the
-     * current SVG view. Every MimicSegment becomes an own group element identified by 'segment-<ID>',
-     * bound to its MQTT topic; every MimicBackground becomes a static group 'background-<Name>' with
-     * no tag binding. Each shape can be selected, moved and bound independently from the others.
+     * Parse the Mimic XML and add each MimicSegment, MimicBackground and generic <svg> as a separate
+     * shape to the current SVG view. Every MimicSegment becomes an own group element identified by
+     * 'segment-<ID>', bound to its MQTT topic; every MimicBackground becomes a static group
+     * 'background-<Name>' with no tag binding; every Mimic > GenericSvgs > svg becomes a static group
+     * 'generic-<Name>'. Each shape can be selected, moved and bound independently from the others.
      * @param xmlText raw content of the XML file
      */
     private importMimicSegments(xmlText: string) {
@@ -1256,20 +1259,24 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         const segmentShapes = this.collectMimicShapes(doc, 'MimicSegment');
         const backgroundShapes = this.collectMimicShapes(doc, 'MimicBackground');
+        const genericSvgs = this.collectGenericSvgs(doc);
         // Collect the line/path sources of every shape, keeping their original (absolute) coordinates
         const allSources: Element[] = [];
         segmentShapes.forEach((shape) => shape.sources.forEach((src) => allSources.push(src)));
         backgroundShapes.forEach((shape) => shape.sources.forEach((src) => allSources.push(src)));
-        if (!allSources.length) {
+        if (!allSources.length && !genericSvgs.length) {
             alert(this.translateService.instant('msg.view-import-mimic-empty'));
             return;
         }
-        // Measure the global bounding box so all segments can be shifted close to the origin
+        // Measure the global bounding box so all shapes can be shifted close to the origin
         // while keeping their relative positions to each other
         const measureSvg = document.createElementNS(svgns, 'svg');
         measureSvg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;left:-9999px;top:-9999px;');
         const measureGroup = document.createElementNS(svgns, 'g');
         allSources.forEach((src) => measureGroup.appendChild(this.cloneMimicElement(src, svgns)));
+        // Include the generic <svg> content in the measurement so it stays aligned with the segments
+        genericSvgs.forEach((generic) => Array.from(generic.element.children).forEach(
+            (child) => measureGroup.appendChild(this.deepCloneMimicElement(child, svgns))));
         measureSvg.appendChild(measureGroup);
         document.body.appendChild(measureSvg);
         let bbox: SVGRect;
@@ -1309,6 +1316,28 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
             const settings = this.gaugesManager.createSettings(elementId, 'svg-ext-shapes-image');
             if (settings) {
                 settings.name = background.name || elementId;
+                settings.property = new GaugeProperty();
+                this.setGaugeSettings(settings);
+            }
+        });
+        // Create the static generic <svg> shapes (no tag binding): every <svg> found under
+        // Mimic > GenericSvgs is rendered as its own group keeping its original content and colors.
+        // Appended before the interactive segments so they render beneath them.
+        genericSvgs.forEach((generic) => {
+            const elementId = this.getUniqueGenericSvgId(generic.name, usedIds);
+            const group = document.createElementNS(svgns, 'g');
+            group.setAttribute('id', elementId);
+            group.setAttribute('type', 'svg-ext-shapes-image');
+            group.setAttribute('transform', transform);
+            // Deep-clone the whole content of the <svg> (groups, paths, text, ...) keeping colors.
+            Array.from(generic.element.children).forEach((child) => {
+                group.appendChild(this.deepCloneMimicElement(child, svgns));
+            });
+            layer.appendChild(group);
+            // Register the shape so the editor handles it consistently; no tag is bound (static element).
+            const settings = this.gaugesManager.createSettings(elementId, 'svg-ext-shapes-image');
+            if (settings) {
+                settings.name = generic.name || elementId;
                 settings.property = new GaugeProperty();
                 this.setGaugeSettings(settings);
             }
@@ -1368,6 +1397,46 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
+     * Recursively clone an element (and all of its element/text children) from the parsed XML into
+     * a new SVG namespaced subtree, copying every attribute. Used for the generic <svg> content,
+     * which can contain arbitrary nested structure (groups, paths, text, ...).
+     */
+    private deepCloneMimicElement(src: Element, svgns: string): SVGElement {
+        const el = document.createElementNS(svgns, src.localName);
+        for (let i = 0; i < src.attributes.length; i++) {
+            const attr = src.attributes[i];
+            el.setAttribute(attr.name, attr.value);
+        }
+        for (let i = 0; i < src.childNodes.length; i++) {
+            const child = src.childNodes[i];
+            if (child.nodeType === Node.ELEMENT_NODE) {
+                el.appendChild(this.deepCloneMimicElement(child as Element, svgns));
+            } else if (child.nodeType === Node.TEXT_NODE && child.textContent) {
+                el.appendChild(document.createTextNode(child.textContent));
+            }
+        }
+        return el as SVGElement;
+    }
+
+    /**
+     * Collect every generic <svg> element declared under Mimic > GenericSvgs. Each <svg> is rendered
+     * as its own static shape, keeping its full original content. The name is taken from a Name/id/name
+     * attribute when present, otherwise a positional fallback is used.
+     */
+    private collectGenericSvgs(doc: Document): { name: string; element: Element }[] {
+        const containers = Array.from(doc.getElementsByTagName('*')).filter((el) => el.localName === 'GenericSvgs');
+        const result: { name: string; element: Element }[] = [];
+        containers.forEach((container) => {
+            const svgs = Array.from(container.children).filter((el) => el.localName === 'svg');
+            svgs.forEach((svg, index) => {
+                const name = svg.getAttribute('Name') || svg.getAttribute('id') || svg.getAttribute('name') || String(index + 1);
+                result.push({ name, element: svg });
+            });
+        });
+        return result;
+    }
+
+    /**
      * Build a unique element id for a MimicSegment in the form 'segment-<ID>'.
      * Ensures the id is valid and does not collide with elements already in the view.
      */
@@ -1392,6 +1461,21 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         let suffix = 1;
         while (usedIds.has(candidate) || document.getElementById(candidate)) {
             candidate = `background-${sanitized}-${suffix++}`;
+        }
+        usedIds.add(candidate);
+        return candidate;
+    }
+
+    /**
+     * Build a unique element id for a generic <svg> in the form 'generic-<Name>'.
+     * Generic svgs are identified by their name and stay static (no tag binding).
+     */
+    private getUniqueGenericSvgId(rawName: string, usedIds: Set<string>): string {
+        const sanitized = String(rawName).trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'x';
+        let candidate = `generic-${sanitized}`;
+        let suffix = 1;
+        while (usedIds.has(candidate) || document.getElementById(candidate)) {
+            candidate = `generic-${sanitized}-${suffix++}`;
         }
         usedIds.add(candidate);
         return candidate;
