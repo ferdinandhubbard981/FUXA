@@ -602,6 +602,17 @@ select#start_marker option[value="D"] {
     width: 30px;
 }
 
+.icon-image-svg {
+    background: url("/assets/images/image-svg.svg") no-repeat center center;
+    background-size: contain;
+    height: 30px;
+    width: 30px;
+}
+
+.icon-image-svg svg text {
+    fill: var(--toolboxButtonText, #000);
+}
+
 .icon-align-left {
     background: url("/assets/images/align-left.svg") no-repeat center center;
     background-size: contain;

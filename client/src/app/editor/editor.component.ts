@@ -884,6 +884,25 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     /**
+     * add SVG file to view as a native <image> element using a data URL
+     * @param event selected file
+     */
+    onSetSvgImage(event) {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            const self = this;
+            const reader = new FileReader();
+            reader.onload = function() {
+                if (self.winRef.nativeWindow.svgEditor.setUrlImageToAdd) {
+                    self.winRef.nativeWindow.svgEditor.setUrlImageToAdd(reader.result);
+                }
+                self.setMode('image');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    /**
      * add image to view
      * the image will be upload into server/_appdata/_upload_files
      * @param event selected file

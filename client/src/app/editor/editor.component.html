@@ -116,7 +116,12 @@
                             <div class="svg-tool-button" [ngClass]="{'svg-tool-active': (isModeActive('image') || isModeActive('svg-image'))}" matTooltip="{{'editor.tools-image' | translate}}"
                                 (click)="imagefile.value = '';imagefile.click();">
                                 <span class="icon-image"></span>
-                                <input #imagefile type="file" style="display: none;" (change)="onSetImage($event)" accept="image/png|jpg|svg" />
+                                <input #imagefile type="file" style="display: none;" (change)="onSetImage($event)" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+                            </div>
+                            <div class="svg-tool-button" matTooltip="{{'editor.tools-svg-image' | translate}}"
+                                (click)="svgimportfile.value = '';svgimportfile.click();">
+                                <span class="icon-image-svg"></span>
+                                <input #svgimportfile type="file" style="display: none;" (change)="onSetSvgImage($event)" accept=".svg,image/svg+xml" />
                             </div>
                             <div id="tool_line" style="display: none;">
                                 <span class="icon-image"></span>

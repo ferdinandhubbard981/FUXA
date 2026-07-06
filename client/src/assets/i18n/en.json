@@ -820,6 +820,7 @@
     "editor.tools-path": "Path Tool",
     "editor.tools-text": "Text Tool",
     "editor.tools-image": "Image Tool (embedded)",
+    "editor.tools-svg-image": "Import SVG",
 
     "editor.tools-zoom-title": "Zoom Tool [Ctrl+Up/Down]",
     "editor.tools-grid-title": "Show Hide Grid",
