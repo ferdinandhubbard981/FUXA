@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Stopbar Module Autofill</h2>
+<mat-dialog-content class="stopbar-content">
+    <div class="stopbar-field">
+        <span class="stopbar-label">Off Colour</span>
+        <input class="stopbar-color-input"
+               [(colorPicker)]="offColour"
+               [value]="offColour"
+               [style.background]="offColour"
+               [cpOKButton]="true"
+               [cpCancelButton]="true"
+               [cpCancelButtonClass]="'cpCancelButtonClass'"
+               [cpCancelButtonText]="'Cancel'"
+               [cpOKButtonText]="'OK'"
+               [cpOKButtonClass]="'cpOKButtonClass'"
+               [cpOutputFormat]="'hex'"
+               [cpAlphaChannel]="'disabled'"
+               readonly />
+    </div>
+    <div class="stopbar-field">
+        <span class="stopbar-label">On Colour</span>
+        <input class="stopbar-color-input"
+               [(colorPicker)]="onColour"
+               [value]="onColour"
+               [style.background]="onColour"
+               [cpOKButton]="true"
+               [cpCancelButton]="true"
+               [cpCancelButtonClass]="'cpCancelButtonClass'"
+               [cpCancelButtonText]="'Cancel'"
+               [cpOKButtonText]="'OK'"
+               [cpOKButtonClass]="'cpOKButtonClass'"
+               [cpOutputFormat]="'hex'"
+               [cpAlphaChannel]="'disabled'"
+               readonly />
+    </div>
+    <div class="stopbar-field">
+        <span class="stopbar-label">Hide/Show Tag</span>
+        <mat-select [(value)]="hideShowTagId" class="stopbar-tag-select">
+            <mat-option *ngFor="let tag of tagOptions" [value]="tag.id">
+                {{ tag.label }}
+            </mat-option>
+        </mat-select>
+    </div>
+    <div class="stopbar-info" *ngIf="!tagOptions.length">
+        <mat-icon style="font-size: 16px; vertical-align: middle;">info</mat-icon>
+        No tags found. Add a device and tags first.
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onApply()" [disabled]="!hideShowTagId">Apply</button>
+</mat-dialog-actions>

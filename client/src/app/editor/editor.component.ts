@@ -7,7 +7,7 @@ import { Subject, Subscription, switchMap, takeUntil } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 
 import { ProjectService, SaveMode } from '../_services/project.service';
-import { Hmi, View, GaugeSettings, SelElement, LayoutSettings, ViewType, ISvgElement, GaugeProperty, GaugeRangeProperty, DocProfile } from '../_models/hmi';
+import { Hmi, View, GaugeSettings, SelElement, LayoutSettings, ViewType, ISvgElement, GaugeProperty, GaugeRangeProperty, DocProfile, GaugeAction, GaugeActionsType, GaugeEvent, GaugeEventActionType, GaugeEventType } from '../_models/hmi';
 import { WindowRef } from '../_helpers/windowref';
 import { GaugePropertyComponent, GaugeDialogType, GaugePropertyData } from '../gauges/gauge-property/gauge-property.component';
 
@@ -45,6 +45,7 @@ import { ResourcesService } from '../_services/resources.service';
 import { InputPropertyComponent } from '../gauges/controls/html-input/input-property/input-property.component';
 import { SettingsService } from '../_services/settings.service';
 import { OnboardingWizardComponent } from './onboarding-wizard/onboarding-wizard.component';
+import { StopbarAutofillComponent, StopbarAutofillData, StopbarAutofillResult } from './stopbar-autofill/stopbar-autofill.component';
 
 declare var Gauge: any;
 
@@ -1591,6 +1592,127 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         tag.address = topic;
         tag.memaddress = topic;
         tag.options = { subs: topic };
+        device.tags[tag.id] = tag;
+        return tag;
+    }
+    //#endregion
+
+    //#region Stopbar Module Autofill
+    /**
+     * Open the Stopbar Module Autofill dialog.
+     * For each selected SVG element, configures its GaugeSettings with:
+     * - A tag bound to stopbar_modules/{name}/state (created if missing)
+     * - Two stroke colour rules (false → off_colour, true → on_colour)
+     * - A click-toggle event on the same tag
+     * - Hide (min 0, max 0) and Show (min 1, max 10) actions on the hide/show tag
+     */
+    onStopbarAutofill() {
+        const selectedElements = (this.winRef.nativeWindow.svgEditor.getSelectedElements() as any[]).filter(Boolean);
+        if (!selectedElements.length) {
+            return;
+        }
+
+        const dialogRef = this.dialog.open(StopbarAutofillComponent, {
+            position: { top: '60px' },
+            data: <StopbarAutofillData>{
+                devices: Object.values(this.projectService.getDevices())
+            }
+        });
+
+        dialogRef.afterClosed().subscribe((result: StopbarAutofillResult) => {
+            if (!result) { return; }
+
+            const device = this.getOrCreateStopbarModulesDevice();
+            const isNewDevice = !Object.values(this.projectService.getDevices()).find((d: Device) => d.id === device.id);
+
+            for (const ele of selectedElements) {
+                const gs = this.currentView?.items?.[ele.id];
+                if (!gs || !gs.name) { continue; }
+
+                const tag = this.getOrCreateStopbarTag(device, `stopbar_modules/${gs.name}/state`);
+
+                const prop = new GaugeProperty();
+                prop.variableId = tag.id;
+                prop.variableValue = '0';
+
+                const falseRange = new GaugeRangeProperty();
+                falseRange.min = 0;
+                falseRange.max = 0;
+                falseRange.stroke = result.offColour;
+
+                const trueRange = new GaugeRangeProperty();
+                trueRange.min = 1;
+                trueRange.max = 1;
+                trueRange.stroke = result.onColour;
+
+                prop.ranges = [falseRange, trueRange];
+
+                const ev = new GaugeEvent();
+                ev.type = Utils.getEnumKey(GaugeEventType, GaugeEventType.click);
+                ev.action = Utils.getEnumKey(GaugeEventActionType, GaugeEventActionType.onToggleValue);
+                ev.actoptions = { variable: { variableId: tag.id, bitmask: 1 } };
+                prop.events = [ev];
+
+                const hideAction = new GaugeAction();
+                hideAction.type = Utils.getEnumKey(GaugeActionsType, GaugeActionsType.hide);
+                hideAction.variableId = result.hideShowTagId;
+                const hideRange = new GaugeRangeProperty();
+                hideRange.min = 0;
+                hideRange.max = 0;
+                hideAction.range = hideRange;
+
+                const showAction = new GaugeAction();
+                showAction.type = Utils.getEnumKey(GaugeActionsType, GaugeActionsType.show);
+                showAction.variableId = result.hideShowTagId;
+                const showRange = new GaugeRangeProperty();
+                showRange.min = 1;
+                showRange.max = 10;
+                showAction.range = showRange;
+
+                prop.actions = [hideAction, showAction];
+
+                gs.property = prop;
+                this.setGaugeSettings(gs);
+            }
+
+            if (isNewDevice) {
+                this.projectService.setDevice(device, null, null);
+            } else {
+                this.projectService.setDeviceTags(device);
+            }
+            this.saveView(this.currentView);
+        });
+    }
+
+    private getOrCreateStopbarModulesDevice(): Device {
+        const allDevices = Object.values(this.projectService.getDevices()) as Device[];
+        let device = allDevices.find((d) => d.name === 'stopbar_modules');
+        if (!device) {
+            device = new Device(Utils.getGUID(DEVICE_PREFIX));
+            device.name = 'stopbar_modules';
+            device.type = DeviceType.internal;
+            device.enabled = true;
+            device.polling = 1000;
+            device.property = new DeviceNetProperty();
+            device.tags = {};
+        }
+        if (!device.tags) {
+            device.tags = {};
+        }
+        return device;
+    }
+
+    private getOrCreateStopbarTag(device: Device, tagName: string): Tag {
+        const existing = Object.values(device.tags).find((t: Tag) => t.name === tagName) as Tag;
+        if (existing) {
+            return existing;
+        }
+        const tag = new Tag(Utils.getGUID(TAG_PREFIX));
+        tag.name = tagName;
+        tag.label = tagName;
+        tag.address = tagName;
+        tag.type = 'raw';
+        tag.init = '0';
         device.tags[tag.id] = tag;
         return tag;
     }

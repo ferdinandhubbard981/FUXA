@@ -1,0 +1,35 @@
+.stopbar-content {
+    min-width: 360px;
+}
+
+.stopbar-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.stopbar-label {
+    width: 110px;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.stopbar-color-input {
+    width: 80px;
+    height: 28px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0 6px;
+    font-size: 12px;
+}
+
+.stopbar-tag-select {
+    flex: 1;
+}
+
+.stopbar-info {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}

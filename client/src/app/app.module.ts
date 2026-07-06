@@ -244,6 +244,7 @@ import { SectionMessageDialogComponent } from './editor/section-message-dialog/s
 import { ArMarkerListComponent } from './ar/ar-marker-list/ar-marker-list.component';
 import { ArMarkerPropertyComponent } from './ar/ar-marker-property/ar-marker-property.component';
 import { ArViewComponent } from './ar/ar-view/ar-view.component';
+import { StopbarAutofillComponent } from './editor/stopbar-autofill/stopbar-autofill.component';
 
 export function createTranslateLoader(http: HttpClient) {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -435,7 +436,8 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
         SectionMessageDialogComponent,
         ArMarkerListComponent,
         ArMarkerPropertyComponent,
-        ArViewComponent
+        ArViewComponent,
+        StopbarAutofillComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         FormsModule,
