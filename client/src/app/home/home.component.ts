@@ -449,10 +449,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.setupStaticLayer();
                 let element: HTMLElement = document.querySelector('#home');
                 if (element && panzoom) {
-                    panzoom(element, {
+                    const pz = panzoom(element, {
                         bounds: true,
                         boundsPadding: 0.05,
                     });
+                    // Prevent double-click from triggering panzoom's zoom behavior
+                    element.addEventListener('dblclick', (ev: MouseEvent) => {
+                        ev.preventDefault();
+                        ev.stopImmediatePropagation();
+                    }, true);
                 }
                 this.container.nativeElement.style.overflow = 'hidden';
             }, 1000);

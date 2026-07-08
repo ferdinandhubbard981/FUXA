@@ -77,10 +77,15 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 setTimeout(() => {
                     let element: HTMLElement = document.querySelector('#view');
                     if (element && panzoom) {
-                        panzoom(element, {
+                        const pz = panzoom(element, {
                             bounds: true,
                             boundsPadding: 0.05,
                         });
+                        // Prevent double-click from triggering panzoom's zoom behavior
+                        element.addEventListener('dblclick', (ev: MouseEvent) => {
+                            ev.preventDefault();
+                            ev.stopImmediatePropagation();
+                        }, true);
                         this.container.nativeElement.style.overflow = 'hidden';
                     }
                 }, 1000);
